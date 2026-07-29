@@ -2,9 +2,10 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>다카하시 신지(高橋信次) 강연 시리즈 - 한글 번역 동영상 아카이브</title>
   <meta name="description" content="일본의 종교지도자 다카하시 신지(高橋信次)의 30편 강연 시리즈 한국어 번역 동영상 및 강연록 아카이브 사이트입니다.">
+  <meta name="theme-color" content="#0f0a1c">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -38,7 +39,7 @@
     <!-- Hero Banner -->
     <section class="hero-banner">
       <h2>마음의 원리와 영혼의 조화</h2>
-      <p>다카하시 신지 종교지도자의 30편 강연 시리즈를 한국어 번역 자막 및 강의록과 함께 시청하실 수 있습니다.</p>
+      <p>다카하시 신지 종교지도자의 30편 강연 시리즈를 한국어 번역 자막 및 강연록과 함께 시청하실 수 있습니다.</p>
       <div class="stats-pills">
         <span class="stat-pill">총 <strong id="totalCount">30</strong>개 강연</span>
         <span class="stat-pill">편당 약 1시간 45분</span>
@@ -46,7 +47,7 @@
       </div>
     </section>
 
-    <!-- Category Filter Bar -->
+    <!-- Touch Scrollable Category Filter Bar -->
     <nav class="filter-bar" aria-label="강의 주제 카테고리">
       <button class="filter-btn active" data-category="all">전체 보기</button>
       <button class="filter-btn" data-category="원리">원리 (原理)</button>
@@ -68,19 +69,19 @@
         <div class="pulse-dot"></div>
         <div class="pulse-dot"></div>
       </div>
-      <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">마우스 휠을 내려 더 많은 강연 보기...</p>
+      <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">마우스 휠이나 터치로 스크롤하여 더 보기...</p>
     </div>
 
   </main>
 
-  <!-- Lecture Detail & Video Modal Popup -->
+  <!-- Mobile Optimized Video Modal Popup -->
   <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
     <div class="modal-window">
       
       <div class="modal-header">
         <div class="modal-title-group">
           <h3 id="modalTitle">강의 제목</h3>
-          <p id="modalJpTitle" style="font-size: 0.8rem; color: var(--text-muted);"></p>
+          <p id="modalJpTitle" style="font-size: 0.78rem; color: var(--text-muted);"></p>
         </div>
         <button class="modal-close-btn" id="modalCloseBtn" aria-label="닫기">&times;</button>
       </div>
@@ -91,8 +92,8 @@
           <div class="iframe-container">
             <iframe id="playerFrame" src="" title="강의 동영상 플레이어" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
           </div>
-          <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
-            <p>💡 <strong>시청 팁</strong>: 아래 타임스탬프 버튼을 클릭하시면 원하는 주요 단락의 시간대로 즉시 이동합니다.</p>
+          <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+            <p>💡 <strong>시청 팁</strong>: 아래 타임스탬프 버튼을 누르면 해당 시간대로 바로 이동합니다.</p>
           </div>
         </div>
 
@@ -106,7 +107,7 @@
           </div>
 
           <div>
-            <div class="section-label">한국어 번역 강의록 / 요약</div>
+            <div class="section-label">한국어 번역 강연록 / 요약</div>
             <div class="transcript-text" id="transcriptText">
               <!-- Rendered via JS -->
             </div>
