@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>다카하시 신지(高橋信次) 강연 시리즈 - 한글 번역 동영상 아카이브</title>
+  <meta name="description" content="일본의 종교지도자 다카하시 신지(高橋信次)의 30편 강연 시리즈 한국어 번역 동영상 및 강연록 아카이브 사이트입니다.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Sticky Header Nav -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="#" class="brand-logo">
+        <div class="logo-icon">信</div>
+        <div class="logo-text-group">
+          <h1>SHINJI TAKAHASHI</h1>
+          <p>한글 번역 동영상 강연 아카이브</p>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="강의 제목, 키워드 검색...">
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="app-container">
+    
+    <!-- Hero Banner -->
+    <section class="hero-banner">
+      <h2>마음의 원리와 영혼의 조화</h2>
+      <p>다카하시 신지 종교지도자의 30편 강연 시리즈를 한국어 번역 자막 및 강의록과 함께 시청하실 수 있습니다.</p>
+      <div class="stats-pills">
+        <span class="stat-pill">총 <strong id="totalCount">30</strong>개 강연</span>
+        <span class="stat-pill">편당 약 1시간 45분</span>
+        <span class="stat-pill">무료 시청 & 강연록</span>
+      </div>
+    </section>
+
+    <!-- Category Filter Bar -->
+    <nav class="filter-bar" aria-label="강의 주제 카테고리">
+      <button class="filter-btn active" data-category="all">전체 보기</button>
+      <button class="filter-btn" data-category="원리">원리 (原理)</button>
+      <button class="filter-btn" data-category="조화">조화 (調和)</button>
+      <button class="filter-btn" data-category="실천">실천 (実践)</button>
+      <button class="filter-btn" data-category="사랑">사랑과 자비</button>
+      <button class="filter-btn" data-category="깨달음">깨달음</button>
+    </nav>
+
+    <!-- Video Cards Feed Grid -->
+    <div class="video-grid" id="videoGrid">
+      <!-- Dynamic Rendered via js/app.js -->
+    </div>
+
+    <!-- Infinite Scroll Loading Trigger -->
+    <div class="loading-trigger" id="loadingTrigger">
+      <div class="pulse-dots">
+        <div class="pulse-dot"></div>
+        <div class="pulse-dot"></div>
+        <div class="pulse-dot"></div>
+      </div>
+      <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">마우스 휠을 내려 더 많은 강연 보기...</p>
+    </div>
+
+  </main>
+
+  <!-- Lecture Detail & Video Modal Popup -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+    <div class="modal-window">
+      
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 id="modalTitle">강의 제목</h3>
+          <p id="modalJpTitle" style="font-size: 0.8rem; color: var(--text-muted);"></p>
+        </div>
+        <button class="modal-close-btn" id="modalCloseBtn" aria-label="닫기">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Left: YouTube Video Frame -->
+        <div class="modal-player-section">
+          <div class="iframe-container">
+            <iframe id="playerFrame" src="" title="강의 동영상 플레이어" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+            <p>💡 <strong>시청 팁</strong>: 아래 타임스탬프 버튼을 클릭하시면 원하는 주요 단락의 시간대로 즉시 이동합니다.</p>
+          </div>
+        </div>
+
+        <!-- Right: Transcript & Timestamps -->
+        <div class="modal-transcript-section">
+          <div>
+            <div class="section-label">주요 목차 (타임스탬프)</div>
+            <div class="timestamp-list" id="timestampList">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div>
+            <div class="section-label">한국어 번역 강의록 / 요약</div>
+            <div class="transcript-text" id="transcriptText">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>© Shinji Takahashi Korean Translation Video Archive. All rights reserved.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/lectures-data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

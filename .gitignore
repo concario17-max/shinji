@@ -1,0 +1,7 @@
+# Temporary files and logs
+*.log
+*.json
+!js/lectures-data.js
+extract_youtube_subtitles.py
+.DS_Store
+node_modules/
