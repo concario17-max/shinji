@@ -1,5 +1,5 @@
 /**
- * 다카하시 신지(高橋信次) 강연 시리즈 데이터베이스 (26편)
+ * 다카하시 신지(高橋信次) 강연 시리즈 데이터베이스 (36편)
  * 카테고리: 노래, DVD, CD
  */
 
@@ -812,8 +812,428 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1975년 5월 11일 (GLA 도쿄 5월 강연회)\n· 연제: 東京5月講演会 「不退転の心」 現証 (gla-dvd007)\n· 수록시간: 54분 43초"
   },
   {
+    "title": "[DVD-8] 75년07월13일 : 반성과 명상(反省と瞑想)",
+    "titleJp": "DVDシリーズ８.「反省と瞑想」 (gla-dvd008)",
+    "category": "DVD",
+    "duration": "1:30:00",
+    "youtubeId": "4dBPyvm6blI",
+    "thumbnail": "https://img.youtube.com/vi/4dBPyvm6blI/hqdefault.jpg",
+    "tags": [
+      "#DVD8",
+      "#1975.07.13",
+      "#반성과명상",
+      "#강연"
+    ],
+    "summary": "1975년 7월 13일 GLA 강연회. 올바른 반성과 깊은 명상을 통해 마음의 때를 씻어내고 실재계의 영원한 빛과 통하는 정법 실천 강연입니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "강연 개회 및 반성과 명상의 필요성"
+      },
+      {
+        "time": "15:30",
+        "seconds": 930,
+        "title": "8정도 기반 과거 사념과 행위의 성찰"
+      },
+      {
+        "time": "32:10",
+        "seconds": 1930,
+        "title": "마음의 미혹을 정화하는 명상법"
+      },
+      {
+        "time": "50:00",
+        "seconds": 3000,
+        "title": "실재계 광명과의 파동 동통"
+      },
+      {
+        "time": "1:10:20",
+        "seconds": 4220,
+        "title": "일상생활에서의 반성 실천 지침"
+      },
+      {
+        "time": "1:25:00",
+        "seconds": 5100,
+        "title": "강연 맺음 및 축원"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1975년 7월 13일 (GLA 강연회)\n· 연제: DVDシリーズ８ 「反省と瞑想」 (gla-dvd008)\n· 수록시간: 1시간 30분",
     "id": 18,
-    "number": "#18",
+    "number": "#18"
+  },
+  {
+    "title": "[DVD-8] 75년07월13일 : 현증(現証)",
+    "titleJp": "DVDシリーズ８.「現証」 (gla-dvd008)",
+    "category": "DVD",
+    "duration": "45:00",
+    "youtubeId": "holZFyguj4E",
+    "thumbnail": "https://img.youtube.com/vi/holZFyguj4E/hqdefault.jpg",
+    "tags": [
+      "#DVD8",
+      "#1975.07.13",
+      "#영도현증",
+      "#현증"
+    ],
+    "summary": "1975년 7월 13일 강연회 영도현증(靈道現証) 현장. 불퇴전의 정법 빛으로 구원과 파동의 정화를 실체적으로 증명한 현증 기록입니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "영도현증(靈道現証) 현장 세션 개시"
+      },
+      {
+        "time": "12:15",
+        "seconds": 735,
+        "title": "어둠의 파동 정화 및 구원의 기적"
+      },
+      {
+        "time": "28:40",
+        "seconds": 1720,
+        "title": "영적 안식과 자비의 파동 회복"
+      },
+      {
+        "time": "40:00",
+        "seconds": 2400,
+        "title": "현증 세션 결언 및 축원"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1975년 7월 13일 (GLA 강연회)\n· 연제: DVDシリーズ８ 「現証」 (gla-dvd008)\n· 수록시간: 45분",
+    "id": 19,
+    "number": "#19"
+  },
+  {
+    "title": "[DVD-9] 75년03월09일 : 염의 구조(念の仕組み) 사령과 생령(死霊と生霊)",
+    "titleJp": "DVDシリーズ９.「念の仕組み」 (gla-dvd009)",
+    "category": "DVD",
+    "duration": "1:35:00",
+    "youtubeId": "NotAAUyfXww",
+    "thumbnail": "https://img.youtube.com/vi/NotAAUyfXww/hqdefault.jpg",
+    "tags": [
+      "#DVD9",
+      "#1975.03.09",
+      "#염의구조",
+      "#사령과생령"
+    ],
+    "summary": "1975년 3월 9일 강연회. 인간의 마음에서 나오는 사념(思念)의 구조와 사령(死霊), 생령(生霊)이 주는 영적 영향과 파장 정화법을 설파하는 강연입니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "사념(思念)의 발생 매커니즘과 마음의 파장"
+      },
+      {
+        "time": "18:20",
+        "seconds": 1100,
+        "title": "생령(生霊)과 사령(死霊)의 영적 상호작용"
+      },
+      {
+        "time": "38:40",
+        "seconds": 2320,
+        "title": "부정적 염(念)을 끊어내는 마음의 조화"
+      },
+      {
+        "time": "59:10",
+        "seconds": 3550,
+        "title": "올바른 정념(正念)을 위한 8정도 실천"
+      },
+      {
+        "time": "1:20:00",
+        "seconds": 4800,
+        "title": "강연 맺음말 및 수훈"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1975년 3월 9일 (GLA 3월 강연회)\n· 연제: DVDシリーズ９ 「念の仕組み 死霊と生霊」 (gla-dvd009)\n· 수록시간: 1시간 35분",
+    "id": 20,
+    "number": "#20"
+  },
+  {
+    "title": "[DVD-9] 75년03월09일 : 질의응답(質疑応答)",
+    "titleJp": "DVDシリーズ９.「質疑応答」 (gla-dvd009)",
+    "category": "DVD",
+    "duration": "50:00",
+    "youtubeId": "OcIWTvvEwug",
+    "thumbnail": "https://img.youtube.com/vi/OcIWTvvEwug/hqdefault.jpg",
+    "tags": [
+      "#DVD9",
+      "#1975.03.09",
+      "#질의응답"
+    ],
+    "summary": "1975년 3월 9일 강연 참가자들의 질문에 다카하시 신지 선생이 정법의 명확한 지혜로 해답을 제시한 질의응답 세션입니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "질의응답 세션 개회"
+      },
+      {
+        "time": "12:30",
+        "seconds": 750,
+        "title": "일상생활에서의 사념 장애 극복법"
+      },
+      {
+        "time": "28:10",
+        "seconds": 1690,
+        "title": "가족 및 인간관계 조화에 관한 질의"
+      },
+      {
+        "time": "42:00",
+        "seconds": 2520,
+        "title": "질의응답 총평 및 맺음말"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1975년 3월 9일 (GLA 3월 강연회)\n· 연제: DVDシリーズ９ 「質疑応答」 (gla-dvd009)\n· 수록시간: 50분",
+    "id": 21,
+    "number": "#21"
+  },
+  {
+    "title": "[DVD-10] 76년03월21일 : 영원의 생명(永遠の生命)",
+    "titleJp": "DVDシリーズ10.「永遠の生命」 (gla-dvd010)",
+    "category": "DVD",
+    "duration": "1:40:00",
+    "youtubeId": "LZwdijC20TA",
+    "thumbnail": "https://img.youtube.com/vi/LZwdijC20TA/hqdefault.jpg",
+    "tags": [
+      "#DVD10",
+      "#1976.03.21",
+      "#영원의생명",
+      "#강연"
+    ],
+    "summary": "1976년 3월 21일 강연회. 육체적 삶을 넘어 실재계에서 잇따르는 영원한 생명의 실체와 구원의 파동을 설파하는 강연입니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "영원한 생명의 의의와 실재계의 실상"
+      },
+      {
+        "time": "20:15",
+        "seconds": 1215,
+        "title": "육체라는 옷을 벗은 뒤의 영혼의 여정"
+      },
+      {
+        "time": "42:30",
+        "seconds": 2550,
+        "title": "전생윤회와 생명의 영속성"
+      },
+      {
+        "time": "1:05:00",
+        "seconds": 3900,
+        "title": "하나님/부처의 자비와 영원한 빛"
+      },
+      {
+        "time": "1:28:40",
+        "seconds": 5320,
+        "title": "강연 맺음 및 축원"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1976년 3월 21일 (GLA 강연회)\n· 연제: DVDシリーズ10 「永遠の生命」 (gla-dvd010)\n· 수록시간: 1시간 40분",
+    "id": 22,
+    "number": "#22"
+  },
+  {
+    "title": "[DVD-10] 76년03월21일 : 정법과 마(正法と魔)",
+    "titleJp": "DVDシリーズ10.「正法と魔」 (gla-dvd010)",
+    "category": "DVD",
+    "duration": "1:15:00",
+    "youtubeId": "bNUFGx1Di98",
+    "thumbnail": "https://img.youtube.com/vi/bNUFGx1Di98/hqdefault.jpg",
+    "tags": [
+      "#DVD10",
+      "#1976.03.21",
+      "#정법과마"
+    ],
+    "summary": "1976년 3월 21일 강연회. 바른 가르침인 정법과 마음의 틈을 노리는 어둠의 미혹(마)을 분별하고 승리하는 지침을 제공합니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "정법의 기준과 마(魔)의 침투 경로"
+      },
+      {
+        "time": "16:40",
+        "seconds": 1000,
+        "title": "교만과 자만심이 부르는 영적 어둠"
+      },
+      {
+        "time": "38:20",
+        "seconds": 2300,
+        "title": "겸손과 반성을 통한 마의 퇴치"
+      },
+      {
+        "time": "1:00:00",
+        "seconds": 3600,
+        "title": "불퇴전의 정념 유지 지침"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1976년 3월 21일 (GLA 강연회)\n· 연제: DVDシリーズ10 「正法と魔」 (gla-dvd010)\n· 수록시간: 1시간 15분",
+    "id": 23,
+    "number": "#23"
+  },
+  {
+    "title": "[DVD-10] 76년03월21일 : 혼의 구조와 정법(魂のしくみと正法)",
+    "titleJp": "DVDシリーズ10.「魂のしくみと正法」 (gla-dvd010)",
+    "category": "DVD",
+    "duration": "1:25:00",
+    "youtubeId": "SoaqbxA--zU",
+    "thumbnail": "https://img.youtube.com/vi/SoaqbxA--zU/hqdefault.jpg",
+    "tags": [
+      "#DVD10",
+      "#1976.03.21",
+      "#혼의구조"
+    ],
+    "summary": "1976년 3월 21일 강연회. 영혼의 구조와 진정으로 하나님/부처의 정법과 일치하는 마음의 통로를 설명합니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "혼의 구조와 영혼의 의식 체계"
+      },
+      {
+        "time": "22:10",
+        "seconds": 1330,
+        "title": "수호령·지도령과의 파동 조화"
+      },
+      {
+        "time": "45:30",
+        "seconds": 2730,
+        "title": "정법 실천을 통한 자성 발현"
+      },
+      {
+        "time": "1:10:00",
+        "seconds": 4200,
+        "title": "세션 결언 및 수훈"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1976년 3월 21일 (GLA 강연회)\n· 연제: DVDシリーズ10 「魂のしくみと正法」 (gla-dvd010)\n· 수록시간: 1시간 25분",
+    "id": 24,
+    "number": "#24"
+  },
+  {
+    "title": "[DVD-11] 73년11월23일 : 물질과 생명(物質と生命)",
+    "titleJp": "DVDシリーズ11.「物質と生命」 (gla-dvd011)",
+    "category": "DVD",
+    "duration": "1:30:00",
+    "youtubeId": "b22SNiFRpmQ",
+    "thumbnail": "https://img.youtube.com/vi/b22SNiFRpmQ/hqdefault.jpg",
+    "tags": [
+      "#DVD11",
+      "#1973.11.23",
+      "#물질과생명"
+    ],
+    "summary": "1973년 11월 23일 강연회. 물질문명의 한계와 눈에 보이지 않는 영적 생명의 우주적 관계를 밝히는 깊이 있는 강연입니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "현대 물질문명의 현주소와 생명의 본질"
+      },
+      {
+        "time": "18:30",
+        "seconds": 1110,
+        "title": "물질 현상계와 실재계 생명력의 관계"
+      },
+      {
+        "time": "40:10",
+        "seconds": 2410,
+        "title": "소유욕을 넘어서는 마음의 조화"
+      },
+      {
+        "time": "1:05:20",
+        "seconds": 3920,
+        "title": "참된 풍요로움과 정법 실천"
+      },
+      {
+        "time": "1:20:00",
+        "seconds": 4800,
+        "title": "강연 맺음 및 축원"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1973년 11월 23일 (GLA 강연회)\n· 연제: DVDシリーズ11 「物質と生命」 (gla-dvd011)\n· 수록시간: 1시간 30분",
+    "id": 25,
+    "number": "#25"
+  },
+  {
+    "title": "[DVD-11] 73년11월23일 : 현증(現証)",
+    "titleJp": "DVDシリーズ11.「現証」 (gla-dvd011)",
+    "category": "DVD",
+    "duration": "40:00",
+    "youtubeId": "BtdCYkoI_v8",
+    "thumbnail": "https://img.youtube.com/vi/BtdCYkoI_v8/hqdefault.jpg",
+    "tags": [
+      "#DVD11",
+      "#1973.11.23",
+      "#현증"
+    ],
+    "summary": "1973년 11월 23일 강연회 현증 세션. 구원의 기적과 파동 회복을 보여준 생생한 현장 기록입니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "현증 세션 개시 및 영적 구원"
+      },
+      {
+        "time": "14:20",
+        "seconds": 860,
+        "title": "어둠의 결박 해제 및 불빛 발현"
+      },
+      {
+        "time": "28:50",
+        "seconds": 1730,
+        "title": "파동 회복 및 성찰 지침"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1973년 11월 23일 (GLA 강연회)\n· 연제: DVDシリーズ11 「現証」 (gla-dvd011)\n· 수록시간: 40분",
+    "id": 26,
+    "number": "#26"
+  },
+  {
+    "title": "[DVD-12] 76년01월10일 : 내면의 마음에 눈을 뜨자(内なる心に目覚めよ)",
+    "titleJp": "DVDシリーズ12.「内なる心に目覚めよ」 (gla-dvd012)",
+    "category": "DVD",
+    "duration": "1:45:00",
+    "youtubeId": "gSWr4Na36BE",
+    "thumbnail": "https://img.youtube.com/vi/gSWr4Na36BE/hqdefault.jpg",
+    "tags": [
+      "#DVD12",
+      "#1976.01.10",
+      "#내면의마음",
+      "#신년강연"
+    ],
+    "summary": "1976년 1월 10일 신년 강연회. 현상계의 미혹을 벗어나 각자의 내면에 존재하는 하나님/부처의 참된 자아에 눈뜨는 강연입니다.",
+    "timestamps": [
+      {
+        "time": "00:00",
+        "seconds": 0,
+        "title": "1976년 신년 강연 개회 및 내면의 마음"
+      },
+      {
+        "time": "20:00",
+        "seconds": 1200,
+        "title": "위아(偽我)를 벗고 참된 자아(眞我) 발견하기"
+      },
+      {
+        "time": "44:10",
+        "seconds": 2650,
+        "title": "8정도 실천을 통한 자성(自性)의 자각"
+      },
+      {
+        "time": "1:08:30",
+        "seconds": 4110,
+        "title": "대조화의 빛과 하나님/부처의 은혜"
+      },
+      {
+        "time": "1:30:00",
+        "seconds": 5400,
+        "title": "신년 수훈 맺음말 및 축원"
+      }
+    ],
+    "transcript": "[공식 수록 정보]\n· 수록일: 1976년 1월 10일 (GLA 신년 강연회)\n· 연제: DVDシリーズ12 「内なる心に目覚めよ」 (gla-dvd012)\n· 수록시간: 1시간 45분",
+    "id": 27,
+    "number": "#27"
+  },
+  {
+    "id": 28,
+    "number": "#28",
     "title": "[다카하시 신지 CD2] 71년10월 23일 : 현대 종교에 대한 의문",
     "titleJp": "特別招待第２回講演会「現代宗教に関する疑問」「質疑応答」 (gla-cd002)",
     "category": "CD",
@@ -887,8 +1307,8 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1971년 10월 23일 (GLA 관서본부 구 서법회 본당)\n· 연제: 「現代宗教に関する疑問」 「質疑応答」\n· 수록시간: 55분 25초\n· 타임스탬프: 11개 세부 주제 구간 제공"
   },
   {
-    "id": 19,
-    "number": "#19",
+    "id": 29,
+    "number": "#29",
     "title": "[다카하시 신지 CD7] 72년01월08일 : 반야심경의 해설",
     "titleJp": "関西1月青年部講演会「般若心経の解説」「霊道現証」 (gla-cd007)",
     "category": "CD",
@@ -937,8 +1357,8 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1972년 1월 8일 (GLA 관서본부 청년부 강연회)\n· 연제: 「般若心経の解説」 「霊道現証」\n· 수록시간: 24분 50초\n· 타임스탬프: 6개 세부 주제 구간 제공"
   },
   {
-    "id": 20,
-    "number": "#20",
+    "id": 30,
+    "number": "#30",
     "title": "[다카하시 신지 CD8] 72년01월09일 : 신리와 과학",
     "titleJp": "関西1月講演会「神理と科学」「質疑応答」 (gla-cd008)",
     "category": "CD",
@@ -1012,8 +1432,8 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1972년 1월 9일 (GLA 관서본부 1월 강연회)\n· 연제: 「神理と科学」 「質疑応答」\n· 수록시간: 1시간 19분 51초\n· 타임스탬프: 11개 세부 주제 구간 제공"
   },
   {
-    "id": 21,
-    "number": "#21",
+    "id": 31,
+    "number": "#31",
     "title": "[다카하시 신지 CD13] 72년04월15일 : 심행의 해설",
     "titleJp": "関西4月青年部講演会「心行の解説」 (gla-cd013)",
     "category": "CD",
@@ -1087,8 +1507,8 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1972년 4월 15일 (GLA 관서본부 청년부)\n· 연제: 「心行の解説」\n· 수록시간: 1시간 24분 10초\n· 타임스탬프: 11개 세부 주제 구간 제공"
   },
   {
-    "id": 22,
-    "number": "#22",
+    "id": 32,
+    "number": "#32",
     "title": "[다카하시 신지 CD22] 72년09월09일 : 실재계와 현상계",
     "titleJp": "関西9月青年部講演会「実在界と現象界」 (gla-cd022)",
     "category": "CD",
@@ -1137,8 +1557,8 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1972년 9월 9일 (GLA 관서본부 청년부)\n· 연제: 「実在界と現象界」\n· 수록시간: 47분 30초\n· 타임스탬프: 6개 세부 주제 구간 제공"
   },
   {
-    "id": 23,
-    "number": "#23",
+    "id": 33,
+    "number": "#33",
     "title": "[다카하시 신지 CD24] 72년10월08일 : 전생윤회에 대해",
     "titleJp": "関西10月講演会「転生輪廻について」「質疑応答」 (gla-cd024)",
     "category": "CD",
@@ -1212,8 +1632,8 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1972년 10월 8일 (GLA 관서본부 10월 강연회)\n· 연제: 「転生輪廻について」 「質疑応答」\n· 수록시간: 2시간 6분 15초\n· 타임스탬프: 11개 세부 주제 구간 제공"
   },
   {
-    "id": 24,
-    "number": "#24",
+    "id": 34,
+    "number": "#34",
     "title": "[다카하시 신지 CD47] 73년12월09일 : 영혼의 환생",
     "titleJp": "関西１２月講演会「魂の転生」「質疑応答」 (gla-cd047)",
     "category": "CD",
@@ -1272,8 +1692,8 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1973년 12월 9일 (GLA 관서본부 12월 강연회)\n· 연제: 「魂の転生」 「質疑応答」\n· 수록시간: 1시간 26분 40초\n· 타임스탬프: 8개 세부 주제 구간 제공"
   },
   {
-    "id": 25,
-    "number": "#25",
+    "id": 35,
+    "number": "#35",
     "title": "[다카하시 신지 CD51] 74년02월10일 : 경전의 구체적 설명을 통해 정법을 설파한다",
     "titleJp": "関西２月講演会「お経の具体的説明を通して正法を説く」「質疑応答」 (gla-cd051)",
     "category": "CD",
@@ -1342,8 +1762,8 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1974년 2월 10일 (GLA 관서본부 2월 강연회)\n· 연제: 「経典の具体的説明を通して正法を説く」 「質疑応答」\n· 수록시간: 2시간 2분 40초\n· 타임스탬프: 10개 세부 주제 구간 제공"
   },
   {
-    "id": 26,
-    "number": "#26",
+    "id": 36,
+    "number": "#36",
     "title": "[다카하시 신지 CD53] 74년03월10일 : 마음의 병",
     "titleJp": "関西３月講演会「心の病」「質疑応答」 (gla-cd053)",
     "category": "CD",
