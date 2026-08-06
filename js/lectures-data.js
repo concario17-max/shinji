@@ -1,5 +1,5 @@
 /**
- * 다카하시 신지(高橋信次) 강연 시리즈 데이터베이스 (30편)
+ * 다카하시 신지(高橋信次) 강연 시리즈 데이터베이스 (26편)
  * 카테고리: 노래, DVD, CD
  */
 
@@ -1412,35 +1412,3 @@ const LECTURE_DATA = [
     "transcript": "[공식 수록 정보]\n· 수록일: 1974년 3월 10일 (GLA 관서본부 3월 강연회)\n· 연제: 「心の病」 「質疑応答」\n· 수록시간: 2시간 0분 30초\n· 타임스탬프: 10개 세부 주제 구간 제공"
   }
 ];
-
-// 나머지 27~30번 데이터 (추후 추가 동영상 주소 반영 시 동일하게 DVD/CD 순서 및 세부 타임스탬프가 적용됩니다)
-for (let i = 27; i <= 30; i++) {
-  const numStr = i < 10 ? `0${i}` : `${i}`;
-  const category = "DVD";
-  
-  LECTURE_DATA.push({
-    id: i,
-    number: `#${numStr}`,
-    title: `[다카하시 신지] 제${i}강 강연 (추가 동영상 대기 중)`,
-    titleJp: `高橋信次 講演シリーズ 第${i}讲`.replace('讲', '講'),
-    category: category,
-    duration: "1:40:00",
-    youtubeId: "pb7UXl6r0ks",
-    thumbnail: `https://img.youtube.com/vi/pb7UXl6r0ks/hqdefault.jpg`,
-    tags: [`#제${i}강`, `#${category}`, `#GLA관서본부`],
-    summary: `제${i}강 한국어 번역 강연입니다. (추가 동영상 링크 전달 시 자막 기준 10개 이상의 세부 타임스탬프가 반영됩니다)`,
-    timestamps: [
-      { time: "00:00", seconds: 0, title: "강연 개회 및 인간이 걸어야 할 참된 '도(道)'의 의의" },
-      { time: "08:40", seconds: 520, title: "8정도(八正道)를 바탕으로 일상에서 길을 걷는 법" },
-      { time: "17:20", seconds: 1040, title: "생각과 말, 행동의 조화로운 실천" },
-      { time: "26:15", seconds: 1575, title: "실재계의 영원한 빛과 현상계 삶의 조화" },
-      { time: "35:10", seconds: 2110, title: "마음의 파장 정화와 하나님/부처의 정법 통로" },
-      { time: "44:30", seconds: 2670, title: "어둠의 미혹을 걷어내는 참된 신앙" },
-      { time: "53:40", seconds: 3220, title: "영도현증(靈道現証) 현장과 악령 구원의 기적" },
-      { time: "1:03:15", seconds: 3795, title: "구원의 기적과 파동 회복 현장" },
-      { time: "1:13:00", seconds: 4380, title: "관서 신년 축원 및 참가자 성찰 지침" },
-      { time: "1:22:30", seconds: 4950, title: "신년 축원 맺음말" }
-    ],
-    transcript: `[공식 수록 정보 및 자막 준비 중]`
-  });
-}
