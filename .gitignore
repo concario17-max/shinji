@@ -2,6 +2,9 @@
 *.log
 *.json
 !js/lectures-data.js
+!js/stories-data.js
 extract_youtube_subtitles.py
 .DS_Store
 node_modules/
+새 폴더/
+

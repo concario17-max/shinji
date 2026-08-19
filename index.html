@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-  <title>다카하시 신지(高橋信次) 강연 시리즈 - 한글 번역 동영상 아카이브</title>
-  <meta name="description" content="일본의 종교지도자 다카하시 신지(高橋信次)의 강연 시리즈 한국어 번역 동영상 및 강연록 아카이브 사이트입니다.">
+  <title>다카하시 신지(高橋信次) 이야기 236편 & 강연 동영상 아카이브</title>
+  <meta name="description" content="다카하시 신지(高橋信次) 이야기 236편 한국어 충실번역·만화 카드 및 강연 동영상 아카이브 웹사이트입니다.">
   <meta name="theme-color" content="#0f0a1c">
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -13,13 +13,25 @@
   <!-- Sticky Header Nav -->
   <header class="site-header">
     <div class="header-inner">
-      <a href="#" class="brand-logo">
+      <a href="#" class="brand-logo" id="brandLogo">
         <div class="logo-icon">信</div>
         <div class="logo-text-group">
           <h1>SHINJI TAKAHASHI</h1>
-          <p>한글 번역 동영상 강연 아카이브</p>
+          <p>정법(正法) · 이야기 & 강연 아카이브</p>
         </div>
       </a>
+
+      <!-- Main Navigation Mode Switcher -->
+      <nav class="main-mode-nav" aria-label="메인 뷰 모드">
+        <button class="mode-nav-btn active" id="modeStoryBtn" data-mode="story">
+          <span class="mode-icon">📖</span>
+          <span class="mode-label">신지 이야기 <small class="count-badge">236편</small></span>
+        </button>
+        <button class="mode-nav-btn" id="modeVideoBtn" data-mode="video">
+          <span class="mode-icon">🎬</span>
+          <span class="mode-label">강연 동영상 <small class="count-badge">47편</small></span>
+        </button>
+      </nav>
 
       <div class="header-actions">
         <div class="search-box">
@@ -27,7 +39,7 @@
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="text" id="searchInput" placeholder="강의 제목, 키워드 검색...">
+          <input type="text" id="searchInput" placeholder="이야기 번호, 제목, 키워드 검색...">
         </div>
       </div>
     </div>
@@ -37,42 +49,223 @@
   <main class="app-container">
     
     <!-- Hero Banner -->
-    <section class="hero-banner">
-      <h2>마음의 원리와 영혼의 조화</h2>
-      <p>다카하시 신지 종교지도자의 강연 시리즈를 한국어 번역 자막 및 강연록과 함께 시청하실 수 있습니다.</p>
-      <div class="stats-pills">
-        <span class="stat-pill">총 <strong id="totalCount">47</strong>개 항목</span>
-        <span class="stat-pill">편당 약 1시간 45분</span>
-        <span class="stat-pill">무료 시청 & 강연록</span>
+    <section class="hero-banner" id="heroBanner">
+      <h2 id="heroTitle">다카하시 신지 이야기 · 236편 완역</h2>
+      <p id="heroSubtitle">5개 장으로 완성된 신지의 일대기와 영적 진리, 그리고 요약 만화 카드와 충실 번역 전문을 제공합니다.</p>
+      <div class="stats-pills" id="heroStats">
+        <span class="stat-pill">전체 <strong id="totalCount">236</strong>개 항목</span>
+        <span class="stat-pill" id="subStat1">5개 장 체계</span>
+        <span class="stat-pill" id="subStat2">만화 요약 & 완역 전문 1:1</span>
       </div>
     </section>
 
-    <!-- Touch Scrollable Category Filter Bar -->
-    <nav class="filter-bar" aria-label="강의 주제 카테고리">
-      <button class="filter-btn active" data-category="all">전체 보기</button>
-      <button class="filter-btn" data-category="노래">노래</button>
-      <button class="filter-btn" data-category="DVD">DVD</button>
-      <button class="filter-btn" data-category="CD">CD</button>
-    </nav>
+    <!-- SECTION 1: Stories Archive Section (Default Active) -->
+    <section class="content-section active" id="storiesSection">
+      
+      <!-- 5-Chapter Filter Tabs -->
+      <nav class="chapter-filter-bar" aria-label="5개 장 필터">
+        <button class="chap-filter-btn active" data-chapter="all">
+          <span class="chap-btn-num">전체</span>
+          <span class="chap-btn-text">전체 보기 (236)</span>
+        </button>
+        <button class="chap-filter-btn chap-1" data-chapter="1">
+          <span class="chap-btn-num">제1장</span>
+          <span class="chap-btn-text">탄생과 전생, 메시아 출현</span>
+          <span class="chap-btn-range">001–050</span>
+        </button>
+        <button class="chap-filter-btn chap-2" data-chapter="2">
+          <span class="chap-btn-num">제2장</span>
+          <span class="chap-btn-text">영혼의 세계와 정법 실천</span>
+          <span class="chap-btn-range">051–100</span>
+        </button>
+        <button class="chap-filter-btn chap-3" data-chapter="3">
+          <span class="chap-btn-num">제3장</span>
+          <span class="chap-btn-text">마음의 본질과 목적·사명</span>
+          <span class="chap-btn-range">101–150</span>
+        </button>
+        <button class="chap-filter-btn chap-4" data-chapter="4">
+          <span class="chap-btn-num">제4장</span>
+          <span class="chap-btn-text">정법의 전개와 현증</span>
+          <span class="chap-btn-range">151–200</span>
+        </button>
+        <button class="chap-filter-btn chap-5" data-chapter="5">
+          <span class="chap-btn-num">제5장</span>
+          <span class="chap-btn-text">신리의 완성과 미래</span>
+          <span class="chap-btn-range">201–236</span>
+        </button>
+      </nav>
 
-    <!-- Video Cards Feed Grid -->
-    <div class="video-grid" id="videoGrid">
-      <!-- Dynamic Rendered via js/app.js -->
-    </div>
-
-    <!-- Infinite Scroll Loading Trigger -->
-    <div class="loading-trigger" id="loadingTrigger">
-      <div class="pulse-dots">
-        <div class="pulse-dot"></div>
-        <div class="pulse-dot"></div>
-        <div class="pulse-dot"></div>
+      <!-- Chapter Roadmap Info Banner -->
+      <div class="chapter-info-banner" id="chapterInfoBanner" style="display: none;">
+        <div class="chapter-info-header">
+          <span class="chapter-badge-lg" id="chapBannerBadge">제1장</span>
+          <h3 id="chapBannerTitle">탄생과 전생, 그리고 참된 메시아의 출현</h3>
+          <span class="chapter-range-tag" id="chapBannerRange">001–050 (총 50편)</span>
+        </div>
+        <div class="chapter-flow-box">
+          <span class="flow-label">핵심 흐름</span>
+          <p id="chapBannerFlow">출생·가족·전생 → 어린 시절 체험 → 영적 각성 → 신지의 사명과 정법</p>
+        </div>
       </div>
-      <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">마우스 휠이나 터치로 스크롤하여 더 보기...</p>
-    </div>
+
+      <!-- Story Cards Feed Grid -->
+      <div class="story-grid" id="storyGrid">
+        <!-- Dynamically rendered via js/app.js -->
+      </div>
+
+      <!-- Story Infinite Scroll Loading Trigger -->
+      <div class="loading-trigger" id="storyLoadingTrigger">
+        <div class="pulse-dots">
+          <div class="pulse-dot"></div>
+          <div class="pulse-dot"></div>
+          <div class="pulse-dot"></div>
+        </div>
+        <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">스크롤하여 다음 이야기 더 보기...</p>
+      </div>
+
+    </section>
+
+    <!-- SECTION 2: Lecture Videos Section -->
+    <section class="content-section" id="videosSection" style="display: none;">
+      
+      <!-- Video Category Filter Bar -->
+      <nav class="filter-bar" aria-label="강의 주제 카테고리">
+        <button class="filter-btn active" data-category="all">전체 보기</button>
+        <button class="filter-btn" data-category="노래">노래</button>
+        <button class="filter-btn" data-category="DVD">DVD 강연</button>
+        <button class="filter-btn" data-category="CD">CD 음성</button>
+      </nav>
+
+      <!-- Video Cards Feed Grid -->
+      <div class="video-grid" id="videoGrid">
+        <!-- Dynamically rendered via js/app.js -->
+      </div>
+
+      <!-- Video Infinite Scroll Loading Trigger -->
+      <div class="loading-trigger" id="videoLoadingTrigger">
+        <div class="pulse-dots">
+          <div class="pulse-dot"></div>
+          <div class="pulse-dot"></div>
+          <div class="pulse-dot"></div>
+        </div>
+        <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">마우스 휠이나 터치로 스크롤하여 더 보기...</p>
+      </div>
+
+    </section>
 
   </main>
 
-  <!-- Mobile Optimized Video Modal Popup -->
+  <!-- ======================================================== -->
+  <!-- MODAL 1: Story Manga + Full Translation Viewer Modal     -->
+  <!-- ======================================================== -->
+  <div class="modal-backdrop" id="storyModalBackdrop" role="dialog" aria-modal="true">
+    <div class="story-modal-window">
+      <div class="modal-drag-handle"></div>
+      
+      <!-- Modal Top Navigation Bar -->
+      <div class="story-modal-header">
+        <div class="story-modal-title-group">
+          <div class="story-modal-badges">
+            <span class="chap-badge" id="storyModalChapBadge">제1장</span>
+            <span class="num-badge" id="storyModalNumber">#001</span>
+          </div>
+          <h3 id="storyModalTitle">참된 메시아의 기록 1</h3>
+          <p id="storyModalOrigTitle" class="story-orig-title"></p>
+        </div>
+        <button class="modal-close-btn" id="storyModalCloseBtn" aria-label="닫기">&times;</button>
+      </div>
+
+      <!-- Modal View Mode Switcher -->
+      <div class="story-view-modes">
+        <div class="view-mode-tabs">
+          <button class="view-tab-btn active" id="tabMangaBtn" data-tab="manga">
+            <span>🖼️ 요약 만화</span>
+          </button>
+          <button class="view-tab-btn" id="tabTextBtn" data-tab="text">
+            <span>📄 충실 번역 전문</span>
+          </button>
+          <button class="view-tab-btn" id="tabSplitBtn" data-tab="split">
+            <span>📑 양쪽 함께 보기</span>
+          </button>
+        </div>
+        <div class="story-quick-actions">
+          <button class="action-btn" id="storyPrevBtn" title="이전 이야기 (단축키: ←)">◀ 이전</button>
+          <span class="quick-counter" id="storyModalIndex">001 / 236</span>
+          <button class="action-btn" id="storyNextBtn" title="다음 이야기 (단축키: →)">다음 ▶</button>
+        </div>
+      </div>
+
+      <!-- Modal Main Body -->
+      <div class="story-modal-body" id="storyModalBody" data-active-tab="manga">
+        
+        <!-- Left / Panel 1: Comic Manga Viewer -->
+        <div class="story-manga-panel" id="storyMangaPanel">
+          <div class="manga-container" id="mangaContainer">
+            <img id="storyModalImage" src="" alt="만화 요약 카드" loading="lazy">
+            <div class="manga-overlay-tools">
+              <button class="tool-btn" id="mangaZoomBtn" title="크게 보기 / 라이트박스">🔍 전체화면 확대</button>
+            </div>
+            <!-- Placeholder for stories without image yet -->
+            <div class="manga-placeholder" id="mangaPlaceholder" style="display: none;">
+              <div class="placeholder-icon">🎨</div>
+              <h4>만화 요약 카드 준비 중</h4>
+              <p>본 회차(140~236)의 만화 일러스트 카드는 순차적으로 제작 중입니다.<br>우측의 <strong>충실 번역 전문</strong>을 통해 본문 내용을 확인하실 수 있습니다.</p>
+              <button class="btn-read-text" id="btnGoToText">충실 번역 전문 읽기 ➔</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right / Panel 2: Full Translation Reader -->
+        <div class="story-text-panel" id="storyTextPanel">
+          
+          <!-- Meta Details Box -->
+          <div class="story-meta-card">
+            <div class="meta-row" id="rowOrigTitle">
+              <span class="meta-label">일본어 원제</span>
+              <span class="meta-value" id="metaOrigTitle">-</span>
+            </div>
+            <div class="meta-row" id="rowContentType">
+              <span class="meta-label">내용 성격</span>
+              <span class="meta-value" id="metaContentType">-</span>
+            </div>
+          </div>
+
+          <!-- Translation Main Body Text -->
+          <div class="reader-section">
+            <h4 class="reader-section-title">한국어 충실 번역 본문</h4>
+            <div class="reader-body" id="storyModalBodyText">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Commentary / Notes / Confession -->
+          <div class="commentary-section" id="storyCommentarySection" style="display: none;">
+            <h4 class="commentary-title">💡 해설 / 번역 메모</h4>
+            <div class="commentary-body" id="storyModalNotes">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 2: Fullscreen Comic Lightbox                       -->
+  <!-- ======================================================== -->
+  <div class="lightbox-backdrop" id="lightboxBackdrop">
+    <button class="lightbox-close" id="lightboxCloseBtn">&times;</button>
+    <div class="lightbox-content">
+      <img id="lightboxImage" src="" alt="만화 카드 확대">
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 3: Video Lecture Player Popup                      -->
+  <!-- ======================================================== -->
   <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
     <div class="modal-window">
       <div class="modal-drag-handle"></div>
@@ -119,11 +312,12 @@
 
   <!-- Footer -->
   <footer class="site-footer">
-    <p>© Shinji Takahashi Korean Translation Video Archive. All rights reserved.</p>
+    <p>© Shinji Takahashi Korean Translation Archive. 다카하시 신지 이야기 236편 & 강연 동영상</p>
   </footer>
 
   <!-- Scripts -->
   <script src="js/lectures-data.js"></script>
+  <script src="js/stories-data.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
