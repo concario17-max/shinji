@@ -165,116 +165,102 @@
   </main>
 
   <!-- ======================================================== -->
-  <!-- MODAL 1: Story Manga + Full Translation Viewer Modal     -->
+  <!-- IMMERSIVE FULLSCREEN COMIC & TRANSLATION VIEWER          -->
   <!-- ======================================================== -->
-  <div class="modal-backdrop" id="storyModalBackdrop" role="dialog" aria-modal="true">
-    <div class="story-modal-window">
-      <div class="modal-drag-handle"></div>
+  <div class="story-viewer-backdrop" id="storyModalBackdrop" role="dialog" aria-modal="true">
+    
+    <!-- Top Floating Header -->
+    <header class="viewer-top-bar">
+      <div class="viewer-meta-left">
+        <span class="viewer-chap-badge" id="storyModalChapBadge">제1장</span>
+        <span class="viewer-num-badge" id="storyModalNumber">#001</span>
+        <h3 class="viewer-title" id="storyModalTitle">참된 메시아의 기록 1</h3>
+        <span class="viewer-counter-pill" id="storyModalIndex">001 / 237</span>
+      </div>
+
+      <div class="viewer-actions-right">
+        <button class="viewer-toggle-btn" id="btnToggleTranslation" title="충실 번역 전문 보기 / 닫기 (단축키: T)">
+          <span class="btn-icon">📄</span>
+          <span class="btn-text">충실 번역 전문</span>
+        </button>
+        <button class="viewer-close-btn" id="storyModalCloseBtn" aria-label="닫기 (Esc)" title="닫기 (단축키: Esc)">&times;</button>
+      </div>
+    </header>
+
+    <!-- Main Stage: Comic + Side Translation Drawer -->
+    <div class="viewer-main-stage" id="storyModalBody">
       
-      <!-- Modal Top Navigation Bar -->
-      <div class="story-modal-header">
-        <div class="story-modal-title-group">
-          <div class="story-modal-badges">
-            <span class="chap-badge" id="storyModalChapBadge">제1장</span>
-            <span class="num-badge" id="storyModalNumber">#001</span>
-          </div>
-          <h3 id="storyModalTitle">참된 메시아의 기록 1</h3>
-          <p id="storyModalOrigTitle" class="story-orig-title"></p>
-        </div>
-        <button class="modal-close-btn" id="storyModalCloseBtn" aria-label="닫기">&times;</button>
-      </div>
+      <!-- Side Navigation Arrow: Previous -->
+      <button class="viewer-nav-btn prev-btn" id="storyPrevBtn" title="이전 이야기 (단축키: ←)" aria-label="이전 이야기">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
 
-      <!-- Modal View Mode Switcher -->
-      <div class="story-view-modes">
-        <div class="view-mode-tabs">
-          <button class="view-tab-btn active" id="tabMangaBtn" data-tab="manga">
-            <span>🖼️ 요약 만화</span>
-          </button>
-          <button class="view-tab-btn" id="tabTextBtn" data-tab="text">
-            <span>📄 충실 번역 전문</span>
-          </button>
-          <button class="view-tab-btn" id="tabSplitBtn" data-tab="split">
-            <span>📑 양쪽 함께 보기</span>
-          </button>
-        </div>
-        <div class="story-quick-actions">
-          <button class="action-btn" id="storyPrevBtn" title="이전 이야기 (단축키: ←)">◀ 이전</button>
-          <span class="quick-counter" id="storyModalIndex">001 / 237</span>
-          <button class="action-btn" id="storyNextBtn" title="다음 이야기 (단축키: →)">다음 ▶</button>
+      <!-- Center Comic Screen -->
+      <div class="viewer-comic-canvas" id="storyMangaPanel">
+        <div class="comic-image-wrapper">
+          <img id="storyModalImage" src="" alt="만화 요약 카드" loading="eager">
         </div>
       </div>
 
-      <!-- Modal Main Body -->
-      <div class="story-modal-body" id="storyModalBody" data-active-tab="manga">
-        
-        <!-- Left / Panel 1: Comic Manga Viewer -->
-        <div class="story-manga-panel" id="storyMangaPanel">
-          <div class="manga-container" id="mangaContainer">
-            <img id="storyModalImage" src="" alt="만화 요약 카드" loading="lazy">
-            <div class="manga-overlay-tools">
-              <button class="tool-btn" id="mangaZoomBtn" title="크게 보기 / 라이트박스">🔍 전체화면 확대</button>
-            </div>
-            <!-- Placeholder for stories without image yet -->
-            <div class="manga-placeholder" id="mangaPlaceholder" style="display: none;">
-              <div class="placeholder-icon">🎨</div>
-              <h4>만화 요약 카드 준비 중</h4>
-              <p>우측의 <strong>충실 번역 전문</strong>을 통해 본문 내용을 확인하실 수 있습니다.</p>
-              <button class="btn-read-text" id="btnGoToText">충실 번역 전문 읽기 ➔</button>
-            </div>
+      <!-- Side Navigation Arrow: Next -->
+      <button class="viewer-nav-btn next-btn" id="storyNextBtn" title="다음 이야기 (단축키: →)" aria-label="다음 이야기">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+
+      <!-- Slide-over Full Translation Reader Panel -->
+      <aside class="viewer-drawer-panel" id="storyTextPanel">
+        <div class="drawer-header">
+          <div class="drawer-title-group">
+            <h4>📄 한국어 충실 번역 전문</h4>
+            <p id="metaOrigTitle" class="drawer-orig-title"></p>
+          </div>
+          <button class="drawer-close-btn" id="btnCloseDrawer" title="번역창 접기">&times;</button>
+        </div>
+
+        <!-- Reader Action Toolbar -->
+        <div class="reader-toolbar">
+          <div class="font-size-controls">
+            <span class="toolbar-label">글자 크기</span>
+            <button class="font-btn" id="btnFontDecrease" title="글자 작게">A-</button>
+            <span class="font-indicator" id="fontIndicator">100%</span>
+            <button class="font-btn" id="btnFontIncrease" title="글자 크게">A+</button>
+          </div>
+          <div class="reader-toolbar-actions">
+            <button class="toolbar-action-btn" id="btnCopyStoryText" title="본문 전문 클립보드 복사">📋 복사</button>
+            <button class="toolbar-action-btn" id="btnShareStory" title="이야기 링크 복사">🔗 공유</button>
           </div>
         </div>
 
-        <!-- Right / Panel 2: Full Translation Reader -->
-        <div class="story-text-panel" id="storyTextPanel">
-          
-          <!-- Reader Action Toolbar -->
-          <div class="reader-toolbar">
-            <div class="font-size-controls">
-              <span class="toolbar-label">글자 크기</span>
-              <button class="font-btn" id="btnFontDecrease" title="글자 작게">A-</button>
-              <span class="font-indicator" id="fontIndicator">100%</span>
-              <button class="font-btn" id="btnFontIncrease" title="글자 크게">A+</button>
-            </div>
-            <div class="reader-toolbar-actions">
-              <button class="toolbar-action-btn" id="btnCopyStoryText" title="본문 전문 클립보드 복사">📋 본문 복사</button>
-              <button class="toolbar-action-btn" id="btnShareStory" title="이야기 링크 복사">🔗 링크 공유</button>
-            </div>
-          </div>
-
-          <!-- Meta Details Box -->
-          <div class="story-meta-card">
-            <div class="meta-row" id="rowOrigTitle">
-              <span class="meta-label">일본어 원제</span>
-              <span class="meta-value" id="metaOrigTitle">-</span>
-            </div>
-            <div class="meta-row" id="rowContentType">
+        <div class="drawer-content-scroll">
+          <!-- Meta details -->
+          <div class="story-meta-card" id="rowContentType">
+            <div class="meta-row">
               <span class="meta-label">내용 성격</span>
               <span class="meta-value" id="metaContentType">-</span>
             </div>
           </div>
 
-          <!-- Translation Main Body Text -->
+          <!-- Body Text -->
           <div class="reader-section">
-            <h4 class="reader-section-title">한국어 충실 번역 본문</h4>
-            <div class="reader-body" id="storyModalBodyText">
-              <!-- Rendered via JS -->
-            </div>
+            <div class="reader-body" id="storyModalBodyText"></div>
           </div>
 
-          <!-- Commentary / Notes / Confession -->
+          <!-- Notes -->
           <div class="commentary-section" id="storyCommentarySection" style="display: none;">
-            <h4 class="commentary-title">💡 해설 / 번역 메모</h4>
-            <div class="commentary-body" id="storyModalNotes">
-              <!-- Rendered via JS -->
-            </div>
+            <h5 class="commentary-title">💡 해설 / 번역 메모</h5>
+            <div class="commentary-body" id="storyModalNotes"></div>
           </div>
-
         </div>
-
-      </div>
+      </aside>
 
     </div>
+
   </div>
+
 
   <!-- ======================================================== -->
   <!-- MODAL 2: Fullscreen Comic Lightbox                       -->

@@ -1,7 +1,7 @@
 /**
  * Application Logic for Shinji Takahashi Archive Website
  * Supports:
- * 1. 📖 다카하시 신지 이야기 (237편 완역 & 5개 장 & 1:1 만화/번역 뷰어)
+ * 1. 📖 다카하시 신지 이야기 (237편 완역 & 즉시 몰입형 풀스크린 만화 뷰어 & 슬라이드 번역 전문)
  * 2. 🎬 강연 동영상 아카이브 (47편 노래/DVD/CD & 타임스탬프 목차)
  * 3. 🔍 스마트 정밀 검색 & Empty State
  * 4. 🔗 URL 해시 딥링크 (#story-001, #video-01)
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeLectures = [...(typeof LECTURE_DATA !== 'undefined' ? LECTURE_DATA : [])];
 
   let currentStoryIndex = 0; // index in activeStories
-  let currentStoryViewMode = 'manga'; // 'manga' | 'text' | 'split'
+  let isTranslationDrawerOpen = false;
   let currentFontSizePercent = 100; // 85 | 100 | 115 | 130
 
   // Pagination / Chunk Loading
@@ -56,30 +56,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const storyGrid = document.getElementById('storyGrid');
   const storyLoadingTrigger = document.getElementById('storyLoadingTrigger');
 
-  // DOM Elements - Story Modal
+  // DOM Elements - Fullscreen Story Viewer
   const storyModalBackdrop = document.getElementById('storyModalBackdrop');
   const storyModalCloseBtn = document.getElementById('storyModalCloseBtn');
   const storyModalChapBadge = document.getElementById('storyModalChapBadge');
   const storyModalNumber = document.getElementById('storyModalNumber');
   const storyModalTitle = document.getElementById('storyModalTitle');
-  const storyModalOrigTitle = document.getElementById('storyModalOrigTitle');
+  const storyModalIndex = document.getElementById('storyModalIndex');
   const storyModalBody = document.getElementById('storyModalBody');
   const storyModalImage = document.getElementById('storyModalImage');
-  const mangaPlaceholder = document.getElementById('mangaPlaceholder');
-  const mangaZoomBtn = document.getElementById('mangaZoomBtn');
+  const storyMangaPanel = document.getElementById('storyMangaPanel');
+  const storyPrevBtn = document.getElementById('storyPrevBtn');
+  const storyNextBtn = document.getElementById('storyNextBtn');
+
+  // DOM Elements - Drawer & Translation
+  const btnToggleTranslation = document.getElementById('btnToggleTranslation');
+  const btnCloseDrawer = document.getElementById('btnCloseDrawer');
   const metaOrigTitle = document.getElementById('metaOrigTitle');
   const metaContentType = document.getElementById('metaContentType');
   const rowContentType = document.getElementById('rowContentType');
   const storyModalBodyText = document.getElementById('storyModalBodyText');
   const storyCommentarySection = document.getElementById('storyCommentarySection');
   const storyModalNotes = document.getElementById('storyModalNotes');
-  const storyPrevBtn = document.getElementById('storyPrevBtn');
-  const storyNextBtn = document.getElementById('storyNextBtn');
-  const storyModalIndex = document.getElementById('storyModalIndex');
-  const tabMangaBtn = document.getElementById('tabMangaBtn');
-  const tabTextBtn = document.getElementById('tabTextBtn');
-  const tabSplitBtn = document.getElementById('tabSplitBtn');
-  const btnGoToText = document.getElementById('btnGoToText');
 
   // DOM Elements - Reader Toolbar
   const btnFontDecrease = document.getElementById('btnFontDecrease');
@@ -87,11 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const fontIndicator = document.getElementById('fontIndicator');
   const btnCopyStoryText = document.getElementById('btnCopyStoryText');
   const btnShareStory = document.getElementById('btnShareStory');
-
-  // DOM Elements - Lightbox
-  const lightboxBackdrop = document.getElementById('lightboxBackdrop');
-  const lightboxCloseBtn = document.getElementById('lightboxCloseBtn');
-  const lightboxImage = document.getElementById('lightboxImage');
 
   // DOM Elements - Videos
   const filterBtns = document.querySelectorAll('.filter-btn');
@@ -168,14 +161,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Story Modal Tab Views
-    tabMangaBtn.addEventListener('click', () => setStoryViewTab('manga'));
-    tabTextBtn.addEventListener('click', () => setStoryViewTab('text'));
-    if (tabSplitBtn) {
-      tabSplitBtn.addEventListener('click', () => setStoryViewTab('split'));
+    // Fullscreen Story Viewer Drawer Toggle
+    if (btnToggleTranslation) {
+      btnToggleTranslation.addEventListener('click', toggleTranslationDrawer);
     }
-    if (btnGoToText) {
-      btnGoToText.addEventListener('click', () => setStoryViewTab('text'));
+    if (btnCloseDrawer) {
+      btnCloseDrawer.addEventListener('click', () => closeTranslationDrawer());
     }
 
     // Reader Toolbar Events
@@ -198,16 +189,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Story Modal Close
     storyModalCloseBtn.addEventListener('click', closeStoryModal);
-    storyModalBackdrop.addEventListener('click', (e) => {
-      if (e.target === storyModalBackdrop) closeStoryModal();
-    });
-
-    // Lightbox Open / Close
-    mangaZoomBtn.addEventListener('click', openLightbox);
-    storyModalImage.addEventListener('click', openLightbox);
-    lightboxCloseBtn.addEventListener('click', closeLightbox);
-    lightboxBackdrop.addEventListener('click', (e) => {
-      if (e.target === lightboxBackdrop) closeLightbox();
+    storyMangaPanel.addEventListener('click', (e) => {
+      // If user clicked the canvas background (outside the comic image), close modal
+      if (e.target === storyMangaPanel || e.target.classList.contains('comic-image-wrapper')) {
+        closeStoryModal();
+      }
     });
 
     // Video Modal Close
@@ -233,9 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (lightboxBackdrop.classList.contains('active')) {
-          closeLightbox();
-        } else if (storyModalBackdrop.classList.contains('active')) {
+        if (storyModalBackdrop.classList.contains('active')) {
           closeStoryModal();
         } else if (videoModalBackdrop.classList.contains('active')) {
           closeVideoModal();
@@ -245,6 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
           navigateStory(-1);
         } else if (e.key === 'ArrowRight') {
           navigateStory(1);
+        } else if (e.key === 't' || e.key === 'T' || e.key === 'ㅅ') {
+          toggleTranslationDrawer();
         }
       }
     });
@@ -293,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const rawQ = (searchQuery || '').trim();
     const cleanQ = rawQ.toLowerCase();
     
-    // Detect exact number search (#1, 1, 001, 237)
     const isNumSearch = /^[#]?\d+$/.test(rawQ);
     const targetNum = isNumSearch ? parseInt(rawQ.replace('#', ''), 10) : null;
 
@@ -303,9 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!cleanQ) return true;
 
       if (targetNum !== null) {
-        // Exact number match (e.g. 1 -> #001)
         if (item.id === targetNum) return true;
-        // Also match if query length >= 2 and num includes it (e.g. 12 -> 012, 120~129)
         const digits = rawQ.replace('#', '');
         if (digits.length >= 2 && item.num.includes(digits)) return true;
         return false;
@@ -319,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
         item.body.toLowerCase().includes(cleanQ);
     });
 
-    // If exact number searched, sort exact match first
     if (targetNum !== null && activeStories.length > 1) {
       activeStories.sort((a, b) => (a.id === targetNum ? -1 : b.id === targetNum ? 1 : a.id - b.id));
     }
@@ -407,45 +389,23 @@ document.addEventListener('DOMContentLoaded', () => {
     card.setAttribute('data-id', item.id);
 
     const chapMeta = item.chapterMeta || { name: `제${item.chapter}장`, badgeColor: 'purple' };
-
-    let thumbHtml = '';
-    if (item.hasImage) {
-      const thumbSrc = item.thumb || item.image;
-      thumbHtml = `
-        <div class="story-card-thumb-wrap">
-          <img src="${thumbSrc}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML='<div class=\\'story-card-text-cover\\'><span class=\\'text-cover-num\\'>${item.number}</span><p class=\\'text-cover-title\\'>${item.title}</p></div>'">
-          <div class="story-card-badges">
-            <span class="story-num-pill">${item.number}</span>
-            <span class="story-chap-pill chap-${item.chapter}">${chapMeta.name}</span>
-          </div>
-          <span class="story-media-tag">🖼️ 요약 만화</span>
-        </div>
-      `;
-    } else {
-      thumbHtml = `
-        <div class="story-card-thumb-wrap">
-          <div class="story-card-text-cover">
-            <span class="text-cover-num">${item.number}</span>
-            <p class="text-cover-title">${item.title}</p>
-            <span class="text-cover-badge">📄 충실 번역 전문 수록</span>
-          </div>
-          <div class="story-card-badges">
-            <span class="story-num-pill">${item.number}</span>
-            <span class="story-chap-pill chap-${item.chapter}">${chapMeta.name}</span>
-          </div>
-          <span class="story-media-tag">📄 번역 전문</span>
-        </div>
-      `;
-    }
+    const thumbSrc = item.thumb || item.image;
 
     card.innerHTML = `
-      ${thumbHtml}
+      <div class="story-card-thumb-wrap">
+        <img src="${thumbSrc}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML='<div class=\\'story-card-text-cover\\'><span class=\\'text-cover-num\\'>${item.number}</span><p class=\\'text-cover-title\\'>${item.title}</p></div>'">
+        <div class="story-card-badges">
+          <span class="story-num-pill">${item.number}</span>
+          <span class="story-chap-pill chap-${item.chapter}">${chapMeta.name}</span>
+        </div>
+        <span class="story-media-tag">🖼️ 요약 만화</span>
+      </div>
       <div class="story-card-content">
         <h4 class="story-card-title">${item.title}</h4>
         ${item.origTitle ? `<p class="story-card-orig-title">${item.origTitle}</p>` : ''}
         <p class="story-card-summary">${item.summary}</p>
         <div class="story-card-footer">
-          <span class="story-card-read-btn">만화 / 번역 읽기 ➔</span>
+          <span class="story-card-read-btn">만화 크게 보기 ➔</span>
         </div>
       </div>
     `;
@@ -457,17 +417,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return card;
   }
 
-  // Open Story Modal
+  // ========================================================
+  // IMMERSIVE FULLSCREEN COMIC VIEWER
+  // ========================================================
   function openStoryModal(item) {
     const idx = activeStories.findIndex(s => s.id === item.id);
     currentStoryIndex = idx >= 0 ? idx : 0;
     renderStoryModalContent(item);
-    
-    // Safety check for mobile: disable split on small screens
-    if (window.innerWidth < 768 && currentStoryViewMode === 'split') {
-      currentStoryViewMode = 'manga';
-    }
-    setStoryViewTab(currentStoryViewMode);
 
     storyModalBackdrop.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -481,28 +437,19 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderStoryModalContent(item) {
     const chapMeta = item.chapterMeta || { name: `제${item.chapter}장`, title: '' };
 
-    storyModalChapBadge.textContent = `${chapMeta.name} · ${chapMeta.title}`;
-    storyModalChapBadge.className = `chap-badge chap-${item.chapter}`;
+    // Header Badges & Title
+    storyModalChapBadge.textContent = chapMeta.name;
+    storyModalChapBadge.className = `viewer-chap-badge chap-${item.chapter}`;
     storyModalNumber.textContent = item.number;
     storyModalTitle.textContent = item.title;
-    storyModalOrigTitle.textContent = item.origTitle || '';
+    storyModalIndex.textContent = `${item.num} / ${typeof STORIES_DATA !== 'undefined' ? STORIES_DATA.length : 237}`;
 
-    // Manga Panel setup
-    if (item.hasImage) {
-      storyModalImage.src = item.image;
-      storyModalImage.style.display = 'block';
-      mangaPlaceholder.style.display = 'none';
-      mangaZoomBtn.style.display = 'inline-block';
-    } else {
-      storyModalImage.src = '';
-      storyModalImage.style.display = 'none';
-      mangaPlaceholder.style.display = 'block';
-      mangaZoomBtn.style.display = 'none';
-      setStoryViewTab('text');
-    }
+    // Load High-Res Comic Image
+    storyModalImage.src = item.image;
+    storyModalImage.alt = `${item.number} ${item.title}`;
 
-    // Text Reader Panel setup
-    metaOrigTitle.textContent = item.origTitle || '원문 표기 없음';
+    // Populate Translation Drawer
+    metaOrigTitle.textContent = item.origTitle ? `원제: ${item.origTitle}` : '원문 표기 없음';
     if (item.contentType) {
       metaContentType.textContent = item.contentType;
       rowContentType.style.display = 'flex';
@@ -520,26 +467,25 @@ document.addEventListener('DOMContentLoaded', () => {
       storyModalNotes.textContent = '';
     }
 
-    // Counter
-    storyModalIndex.textContent = `${item.num} / ${typeof STORIES_DATA !== 'undefined' ? STORIES_DATA.length : 237}`;
-
-    // Apply current font size
+    // Apply font size
     applyFontSize();
 
     // Scroll panels to top
-    const mangaPanel = document.getElementById('storyMangaPanel');
-    const textPanel = document.getElementById('storyTextPanel');
-    if (mangaPanel) mangaPanel.scrollTop = 0;
-    if (textPanel) textPanel.scrollTop = 0;
+    const drawerScroll = document.querySelector('.drawer-content-scroll');
+    if (drawerScroll) drawerScroll.scrollTop = 0;
+    storyMangaPanel.scrollTop = 0;
   }
 
-  function setStoryViewTab(tab) {
-    currentStoryViewMode = tab;
-    storyModalBody.setAttribute('data-active-tab', tab);
+  function toggleTranslationDrawer() {
+    isTranslationDrawerOpen = !isTranslationDrawerOpen;
+    storyModalBody.classList.toggle('drawer-open', isTranslationDrawerOpen);
+    btnToggleTranslation.classList.toggle('active', isTranslationDrawerOpen);
+  }
 
-    tabMangaBtn.classList.toggle('active', tab === 'manga');
-    tabTextBtn.classList.toggle('active', tab === 'text');
-    if (tabSplitBtn) tabSplitBtn.classList.toggle('active', tab === 'split');
+  function closeTranslationDrawer() {
+    isTranslationDrawerOpen = false;
+    storyModalBody.classList.remove('drawer-open');
+    btnToggleTranslation.classList.remove('active');
   }
 
   function navigateStory(direction) {
@@ -561,6 +507,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeStoryModal() {
     storyModalBackdrop.classList.remove('active');
     document.body.style.overflow = '';
+    closeTranslationDrawer();
+
     if (history.replaceState && window.location.hash.startsWith('#story-')) {
       history.replaceState(null, '', window.location.pathname + window.location.search);
     }
@@ -627,20 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
         toast.parentElement.removeChild(toast);
       }
     }, 2600);
-  }
-
-  // Lightbox
-  function openLightbox() {
-    const activeItem = activeStories[currentStoryIndex];
-    if (activeItem && activeItem.hasImage) {
-      lightboxImage.src = activeItem.image;
-      lightboxBackdrop.classList.add('active');
-    }
-  }
-
-  function closeLightbox() {
-    lightboxBackdrop.classList.remove('active');
-    lightboxImage.src = '';
   }
 
   // ========================================================
@@ -771,7 +705,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="timestamp-desc">${ts.title}</span>
         `;
         row.addEventListener('click', () => {
-          // Set active highlight
           const allRows = timestampList.querySelectorAll('.timestamp-item');
           allRows.forEach(r => r.classList.remove('active'));
           row.classList.add('active');
@@ -809,7 +742,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash;
     if (!hash) return;
 
-    // Match #story-001 or #story-237
     const storyMatch = hash.match(/^#story-(\d+)$/i);
     if (storyMatch) {
       const storyNum = storyMatch[1];
@@ -822,7 +754,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Match #video-01 or #video-1
     const videoMatch = hash.match(/^#video-(\d+)$/i);
     if (videoMatch) {
       const vidId = parseInt(videoMatch[1], 10);
@@ -849,7 +780,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Helper function to escape HTML in search query display
   function escapeHtml(str) {
     if (!str) return '';
     return str
