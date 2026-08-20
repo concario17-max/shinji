@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
           navigateStory(1);
         } else if (e.key === 't' || e.key === 'T' || e.key === 'ㅅ') {
           toggleTranslationDrawer();
-        } else if (e.key === 'f' || e.key === 'F' || e.key === 'ㄹ') {
+        } else if (e.key === 'f' || e.key === 'F' || e.key === 'ㄹ' || e.key === 'F11') {
           e.preventDefault();
           toggleFullscreen();
         }
@@ -258,38 +258,88 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Native Fullscreen API Handler (F11 equivalent)
-  function toggleFullscreen() {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen().catch(() => {});
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      } else if (elem.msRequestFullscreen) {
-        elem.msRequestFullscreen();
+  function toggleFullscreen(e) {
+    if (e && e.preventDefault) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    const isFs = !!(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    );
+
+    if (!isFs) {
+      const docEl = document.documentElement;
+      const requestMethod = docEl.requestFullscreen ||
+                            docEl.webkitRequestFullscreen ||
+                            docEl.webkitRequestFullScreen ||
+                            docEl.mozRequestFullScreen ||
+                            docEl.msRequestFullscreen;
+
+      if (requestMethod) {
+        try {
+          const promise = requestMethod.call(docEl);
+          if (promise && promise.catch) {
+            promise.catch(err => {
+              console.warn('Fullscreen request rejected:', err);
+              showToast('💡 키보드의 F11 키를 직접 누르면 전체화면으로 전환됩니다.');
+            });
+          }
+        } catch (err) {
+          console.warn('Fullscreen execution exception:', err);
+          showToast('💡 키보드의 F11 키를 직접 누르면 전체화면으로 전환됩니다.');
+        }
+      } else {
+        showToast('💡 브라우저의 F11 키를 눌러 전체화면으로 전환해 주세요.');
       }
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
+      const exitMethod = document.exitFullscreen ||
+                         document.webkitExitFullscreen ||
+                         document.webkitCancelFullScreen ||
+                         document.mozCancelFullScreen ||
+                         document.msExitFullscreen;
+      if (exitMethod) {
+        try {
+          const promise = exitMethod.call(document);
+          if (promise && promise.catch) {
+            promise.catch(() => {});
+          }
+        } catch (err) {
+          console.warn('Exit fullscreen error:', err);
+        }
       }
     }
   }
 
   function updateFullscreenUI() {
-    const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    const isFs = !!(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    );
+
+    document.body.classList.toggle('is-native-fullscreen', isFs);
+    if (storyModalBackdrop) {
+      storyModalBackdrop.classList.toggle('is-native-fullscreen', isFs);
+    }
+
     if (btnToggleFullscreen) {
       btnToggleFullscreen.classList.toggle('is-fullscreen', isFs);
-      btnToggleFullscreen.title = isFs ? '전체화면 해제 (단축키: F)' : '브라우저 전체화면 전환 (단축키: F)';
+      btnToggleFullscreen.title = isFs ? '전체화면 해제 (단축키: F / Esc)' : '브라우저 전체화면 전환 (단축키: F / F11)';
       const fsIconEnter = btnToggleFullscreen.querySelector('.fs-icon-enter');
       const fsIconExit = btnToggleFullscreen.querySelector('.fs-icon-exit');
       const fsText = btnToggleFullscreen.querySelector('.fs-text');
       if (fsIconEnter) fsIconEnter.style.display = isFs ? 'none' : 'inline-block';
       if (fsIconExit) fsIconExit.style.display = isFs ? 'inline-block' : 'none';
       if (fsText) fsText.textContent = isFs ? '화면 해제' : '전체화면';
+    }
+
+    if (isFs) {
+      showToast('⛶ 전체화면 모드 (단축키: F 또는 Esc 로 해제)');
     }
   }
 

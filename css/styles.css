@@ -1225,6 +1225,21 @@ body::before {
   transition: transform 0.25s ease;
 }
 
+/* When in Native Fullscreen */
+.story-viewer-backdrop.is-native-fullscreen .viewer-top-bar {
+  height: 52px;
+  background: rgba(10, 5, 18, 0.95);
+}
+
+.story-viewer-backdrop.is-native-fullscreen .viewer-main-stage {
+  height: calc(100vh - 52px);
+}
+
+.story-viewer-backdrop.is-native-fullscreen .comic-image-wrapper img {
+  max-height: calc(100vh - 64px);
+  max-width: 96vw;
+}
+
 /* Nav Buttons (Left & Right) */
 .viewer-nav-btn {
   position: absolute;
