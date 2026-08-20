@@ -1,8 +1,12 @@
 /**
  * Application Logic for Shinji Takahashi Archive Website
  * Supports:
- * 1. 📖 다카하시 신지 이야기 (236편 완역 & 5개 장 & 1:1 만화/번역 뷰어)
- * 2. 🎬 강연 동영상 아카이브 (47편 노래/DVD/CD)
+ * 1. 📖 다카하시 신지 이야기 (237편 완역 & 5개 장 & 1:1 만화/번역 뷰어)
+ * 2. 🎬 강연 동영상 아카이브 (47편 노래/DVD/CD & 타임스탬프 목차)
+ * 3. 🔍 스마트 정밀 검색 & Empty State
+ * 4. 🔗 URL 해시 딥링크 (#story-001, #video-01)
+ * 5. 📖 본문 글자 크기 조절 (A- / A+), 전문 복사, 링크 공유
+ * 6. 🚀 Scroll-to-Top 플로팅 버튼
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentStoryIndex = 0; // index in activeStories
   let currentStoryViewMode = 'manga'; // 'manga' | 'text' | 'split'
+  let currentFontSizePercent = 100; // 85 | 100 | 115 | 130
 
   // Pagination / Chunk Loading
   const STORY_CHUNK = 12;
@@ -32,11 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const storiesSection = document.getElementById('storiesSection');
   const videosSection = document.getElementById('videosSection');
   const searchInput = document.getElementById('searchInput');
+  const searchClearBtn = document.getElementById('searchClearBtn');
   const heroTitle = document.getElementById('heroTitle');
   const heroSubtitle = document.getElementById('heroSubtitle');
   const totalCountEl = document.getElementById('totalCount');
   const subStat1 = document.getElementById('subStat1');
   const subStat2 = document.getElementById('subStat2');
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  const toastBox = document.getElementById('toastBox');
 
   // DOM Elements - Stories
   const chapFilterBtns = document.querySelectorAll('.chap-filter-btn');
@@ -73,6 +81,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabSplitBtn = document.getElementById('tabSplitBtn');
   const btnGoToText = document.getElementById('btnGoToText');
 
+  // DOM Elements - Reader Toolbar
+  const btnFontDecrease = document.getElementById('btnFontDecrease');
+  const btnFontIncrease = document.getElementById('btnFontIncrease');
+  const fontIndicator = document.getElementById('fontIndicator');
+  const btnCopyStoryText = document.getElementById('btnCopyStoryText');
+  const btnShareStory = document.getElementById('btnShareStory');
+
   // DOM Elements - Lightbox
   const lightboxBackdrop = document.getElementById('lightboxBackdrop');
   const lightboxCloseBtn = document.getElementById('lightboxCloseBtn');
@@ -97,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     updateStoriesData();
     updateVideosData();
+    checkUrlHash();
   }
 
   function setupEventListeners() {
@@ -106,13 +122,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Search Input
     searchInput.addEventListener('input', (e) => {
-      searchQuery = e.target.value.trim().toLowerCase();
+      searchQuery = e.target.value.trim();
+      if (searchClearBtn) {
+        searchClearBtn.style.display = searchQuery ? 'flex' : 'none';
+      }
       if (currentMode === 'story') {
         updateStoriesData();
       } else {
         updateVideosData();
       }
     });
+
+    if (searchClearBtn) {
+      searchClearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchQuery = '';
+        searchClearBtn.style.display = 'none';
+        searchInput.focus();
+        if (currentMode === 'story') {
+          updateStoriesData();
+        } else {
+          updateVideosData();
+        }
+      });
+    }
 
     // Story Chapter Filters
     chapFilterBtns.forEach(btn => {
@@ -145,6 +178,20 @@ document.addEventListener('DOMContentLoaded', () => {
       btnGoToText.addEventListener('click', () => setStoryViewTab('text'));
     }
 
+    // Reader Toolbar Events
+    if (btnFontDecrease) {
+      btnFontDecrease.addEventListener('click', () => adjustFontSize(-15));
+    }
+    if (btnFontIncrease) {
+      btnFontIncrease.addEventListener('click', () => adjustFontSize(15));
+    }
+    if (btnCopyStoryText) {
+      btnCopyStoryText.addEventListener('click', copyCurrentStoryText);
+    }
+    if (btnShareStory) {
+      btnShareStory.addEventListener('click', shareCurrentStoryLink);
+    }
+
     // Story Prev / Next
     storyPrevBtn.addEventListener('click', () => navigateStory(-1));
     storyNextBtn.addEventListener('click', () => navigateStory(1));
@@ -169,6 +216,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === videoModalBackdrop) closeVideoModal();
     });
 
+    // Scroll to Top Floating Button
+    if (scrollTopBtn) {
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 400) {
+          scrollTopBtn.classList.add('visible');
+        } else {
+          scrollTopBtn.classList.remove('visible');
+        }
+      });
+      scrollTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
     // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -190,6 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Scroll Handler for Infinite Loading
     window.addEventListener('scroll', handleScroll);
+
+    // Hash change listener (Back/Forward browser buttons)
+    window.addEventListener('hashchange', checkUrlHash);
   }
 
   // Switch between Story Mode and Video Mode
@@ -223,20 +287,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ========================================================
-  // STORY SECTION LOGIC
+  // STORY SECTION LOGIC (Smart Number Search & Empty State)
   // ========================================================
   function updateStoriesData() {
+    const rawQ = (searchQuery || '').trim();
+    const cleanQ = rawQ.toLowerCase();
+    
+    // Detect exact number search (#1, 1, 001, 237)
+    const isNumSearch = /^[#]?\d+$/.test(rawQ);
+    const targetNum = isNumSearch ? parseInt(rawQ.replace('#', ''), 10) : null;
+
     activeStories = STORIES_DATA.filter(item => {
       const matchChapter = (storyChapter === 'all') || (item.chapter === parseInt(storyChapter));
-      const matchSearch = !searchQuery || 
-        item.num.includes(searchQuery) ||
-        item.number.toLowerCase().includes(searchQuery) ||
-        item.title.toLowerCase().includes(searchQuery) ||
-        (item.origTitle && item.origTitle.toLowerCase().includes(searchQuery)) ||
-        item.summary.toLowerCase().includes(searchQuery) ||
-        item.body.toLowerCase().includes(searchQuery);
-      return matchChapter && matchSearch;
+      if (!matchChapter) return false;
+      if (!cleanQ) return true;
+
+      if (targetNum !== null) {
+        // Exact number match (e.g. 1 -> #001)
+        if (item.id === targetNum) return true;
+        // Also match if query length >= 2 and num includes it (e.g. 12 -> 012, 120~129)
+        const digits = rawQ.replace('#', '');
+        if (digits.length >= 2 && item.num.includes(digits)) return true;
+        return false;
+      }
+
+      return item.num.includes(cleanQ) ||
+        item.number.toLowerCase().includes(cleanQ) ||
+        item.title.toLowerCase().includes(cleanQ) ||
+        (item.origTitle && item.origTitle.toLowerCase().includes(cleanQ)) ||
+        item.summary.toLowerCase().includes(cleanQ) ||
+        item.body.toLowerCase().includes(cleanQ);
     });
+
+    // If exact number searched, sort exact match first
+    if (targetNum !== null && activeStories.length > 1) {
+      activeStories.sort((a, b) => (a.id === targetNum ? -1 : b.id === targetNum ? 1 : a.id - b.id));
+    }
 
     if (currentMode === 'story' && totalCountEl) {
       totalCountEl.textContent = activeStories.length;
@@ -257,9 +343,32 @@ document.addEventListener('DOMContentLoaded', () => {
       chapterInfoBanner.style.display = 'none';
     }
 
-    // Reset Grid
+    // Reset Grid & Check Empty State
     storyGrid.innerHTML = '';
     loadedStoryCount = 0;
+
+    if (activeStories.length === 0) {
+      storyGrid.innerHTML = `
+        <div class="empty-state-card">
+          <div class="empty-state-icon">🔍</div>
+          <h3 class="empty-state-title">일치하는 이야기가 없습니다</h3>
+          <p class="empty-state-desc">'<strong>${escapeHtml(rawQ)}</strong>' 검색어와 일치하는 항목을 찾을 수 없습니다.<br>번호(예: 1, 237) 또는 다른 키워드로 검색해 보세요.</p>
+          <button class="empty-state-btn" id="btnResetStorySearch">전체 목록 보기</button>
+        </div>
+      `;
+      const resetBtn = document.getElementById('btnResetStorySearch');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          searchQuery = '';
+          if (searchClearBtn) searchClearBtn.style.display = 'none';
+          updateStoriesData();
+        });
+      }
+      if (storyLoadingTrigger) storyLoadingTrigger.style.display = 'none';
+      return;
+    }
+
     renderNextStoryChunk();
   }
 
@@ -353,8 +462,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const idx = activeStories.findIndex(s => s.id === item.id);
     currentStoryIndex = idx >= 0 ? idx : 0;
     renderStoryModalContent(item);
+    
+    // Safety check for mobile: disable split on small screens
+    if (window.innerWidth < 768 && currentStoryViewMode === 'split') {
+      currentStoryViewMode = 'manga';
+    }
+    setStoryViewTab(currentStoryViewMode);
+
     storyModalBackdrop.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    // Update URL hash for deep linking
+    if (history.replaceState) {
+      history.replaceState(null, '', `#story-${item.num}`);
+    }
   }
 
   function renderStoryModalContent(item) {
@@ -372,14 +493,11 @@ document.addEventListener('DOMContentLoaded', () => {
       storyModalImage.style.display = 'block';
       mangaPlaceholder.style.display = 'none';
       mangaZoomBtn.style.display = 'inline-block';
-      // Default to manga tab if available
-      setStoryViewTab(currentStoryViewMode === 'text' ? 'text' : 'manga');
     } else {
       storyModalImage.src = '';
       storyModalImage.style.display = 'none';
       mangaPlaceholder.style.display = 'block';
       mangaZoomBtn.style.display = 'none';
-      // Default to text if no image
       setStoryViewTab('text');
     }
 
@@ -404,6 +522,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Counter
     storyModalIndex.textContent = `${item.num} / ${typeof STORIES_DATA !== 'undefined' ? STORIES_DATA.length : 237}`;
+
+    // Apply current font size
+    applyFontSize();
 
     // Scroll panels to top
     const mangaPanel = document.getElementById('storyMangaPanel');
@@ -431,11 +552,81 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const nextItem = activeStories[currentStoryIndex];
     renderStoryModalContent(nextItem);
+
+    if (history.replaceState) {
+      history.replaceState(null, '', `#story-${nextItem.num}`);
+    }
   }
 
   function closeStoryModal() {
     storyModalBackdrop.classList.remove('active');
     document.body.style.overflow = '';
+    if (history.replaceState && window.location.hash.startsWith('#story-')) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }
+
+  // Reader Font Size Controls
+  function adjustFontSize(delta) {
+    currentFontSizePercent = Math.max(85, Math.min(145, currentFontSizePercent + delta));
+    applyFontSize();
+  }
+
+  function applyFontSize() {
+    if (storyModalBodyText) {
+      storyModalBodyText.style.fontSize = `${(0.98 * currentFontSizePercent) / 100}rem`;
+    }
+    if (fontIndicator) {
+      fontIndicator.textContent = `${currentFontSizePercent}%`;
+    }
+  }
+
+  // Copy Full Story Text
+  function copyCurrentStoryText() {
+    const item = activeStories[currentStoryIndex];
+    if (!item) return;
+
+    let fullTextToCopy = `${item.number} ${item.title}\n`;
+    if (item.origTitle) fullTextToCopy += `(원제: ${item.origTitle})\n`;
+    fullTextToCopy += `\n[한국어 충실 번역 본문]\n${item.body}\n`;
+    if (item.notes && item.notes.trim()) {
+      fullTextToCopy += `\n[해설 및 번역 메모]\n${item.notes}\n`;
+    }
+    fullTextToCopy += `\n출처: 다카하시 신지 이야기 아카이브 (${window.location.origin}${window.location.pathname}#story-${item.num})`;
+
+    navigator.clipboard.writeText(fullTextToCopy).then(() => {
+      showToast('📋 이야기 본문이 클립보드에 복사되었습니다!');
+    }).catch(() => {
+      showToast('⚠️ 복사에 실패했습니다.');
+    });
+  }
+
+  // Share Story Link
+  function shareCurrentStoryLink() {
+    const item = activeStories[currentStoryIndex];
+    if (!item) return;
+
+    const url = `${window.location.origin}${window.location.pathname}#story-${item.num}`;
+    navigator.clipboard.writeText(url).then(() => {
+      showToast(`🔗 #${item.num} 이야기 링크가 복사되었습니다!`);
+    }).catch(() => {
+      showToast('⚠️ 링크 복사에 실패했습니다.');
+    });
+  }
+
+  // Toast Notification
+  function showToast(msg) {
+    if (!toastBox) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast-message';
+    toast.textContent = msg;
+    toastBox.appendChild(toast);
+
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.parentElement.removeChild(toast);
+      }
+    }, 2600);
   }
 
   // Lightbox
@@ -456,14 +647,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // VIDEO LECTURE SECTION LOGIC
   // ========================================================
   function updateVideosData() {
+    const rawQ = (searchQuery || '').trim();
+    const cleanQ = rawQ.toLowerCase();
+
     activeLectures = LECTURE_DATA.filter(item => {
       const matchCategory = (videoCategory === 'all') || (item.category === videoCategory);
-      const matchSearch = !searchQuery || 
-        item.title.toLowerCase().includes(searchQuery) ||
-        item.titleJp.toLowerCase().includes(searchQuery) ||
-        item.summary.toLowerCase().includes(searchQuery) ||
-        item.tags.some(tag => tag.toLowerCase().includes(searchQuery));
-      return matchCategory && matchSearch;
+      if (!matchCategory) return false;
+      if (!cleanQ) return true;
+
+      return item.title.toLowerCase().includes(cleanQ) ||
+        item.titleJp.toLowerCase().includes(cleanQ) ||
+        item.summary.toLowerCase().includes(cleanQ) ||
+        item.tags.some(tag => tag.toLowerCase().includes(cleanQ));
     });
 
     if (currentMode === 'video' && totalCountEl) {
@@ -472,6 +667,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     videoGrid.innerHTML = '';
     loadedVideoCount = 0;
+
+    if (activeLectures.length === 0) {
+      videoGrid.innerHTML = `
+        <div class="empty-state-card">
+          <div class="empty-state-icon">🎬</div>
+          <h3 class="empty-state-title">일치하는 강연 영상이 없습니다</h3>
+          <p class="empty-state-desc">'<strong>${escapeHtml(rawQ)}</strong>' 검색어와 일치하는 영상을 찾을 수 없습니다.<br>다른 주제나 키워드로 검색해 보세요.</p>
+          <button class="empty-state-btn" id="btnResetVideoSearch">전체 강연 보기</button>
+        </div>
+      `;
+      const resetBtn = document.getElementById('btnResetVideoSearch');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          searchQuery = '';
+          if (searchClearBtn) searchClearBtn.style.display = 'none';
+          updateVideosData();
+        });
+      }
+      if (videoLoadingTrigger) videoLoadingTrigger.style.display = 'none';
+      return;
+    }
+
     renderNextVideoChunk();
   }
 
@@ -513,7 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     card.innerHTML = `
       <div class="card-thumb-wrap">
-        <img class="card-thumb" src="${item.thumbnail}" alt="${item.title}" loading="lazy" onerror="this.src='https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg'">
+        <img class="card-thumb" src="${item.thumbnail}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.src='https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg'">
         <div class="play-overlay">
           <div class="play-circle">
             <div class="play-triangle"></div>
@@ -553,6 +771,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="timestamp-desc">${ts.title}</span>
         `;
         row.addEventListener('click', () => {
+          // Set active highlight
+          const allRows = timestampList.querySelectorAll('.timestamp-item');
+          allRows.forEach(r => r.classList.remove('active'));
+          row.classList.add('active');
+
           playerFrame.src = `https://www.youtube.com/embed/${item.youtubeId}?autoplay=1&start=${ts.seconds}&enablejsapi=1&rel=0`;
         });
         timestampList.appendChild(row);
@@ -566,12 +789,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     videoModalBackdrop.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    if (history.replaceState) {
+      history.replaceState(null, '', `#video-${item.id}`);
+    }
   }
 
   function closeVideoModal() {
     videoModalBackdrop.classList.remove('active');
     playerFrame.src = '';
     document.body.style.overflow = '';
+    if (history.replaceState && window.location.hash.startsWith('#video-')) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }
+
+  // Check URL Hash for Deep Linking on Page Load
+  function checkUrlHash() {
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    // Match #story-001 or #story-237
+    const storyMatch = hash.match(/^#story-(\d+)$/i);
+    if (storyMatch) {
+      const storyNum = storyMatch[1];
+      const storyId = parseInt(storyNum, 10);
+      const story = STORIES_DATA.find(s => s.id === storyId);
+      if (story) {
+        switchMode('story');
+        openStoryModal(story);
+        return;
+      }
+    }
+
+    // Match #video-01 or #video-1
+    const videoMatch = hash.match(/^#video-(\d+)$/i);
+    if (videoMatch) {
+      const vidId = parseInt(videoMatch[1], 10);
+      const video = LECTURE_DATA.find(v => v.id === vidId);
+      if (video) {
+        switchMode('video');
+        openVideoModal(video);
+        return;
+      }
+    }
   }
 
   // Infinite Scroll Trigger
@@ -586,5 +847,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderNextVideoChunk();
       }
     }
+  }
+
+  // Helper function to escape HTML in search query display
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 });

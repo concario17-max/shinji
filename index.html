@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>다카하시 신지(高橋信次) 이야기 237편 & 강연 동영상 아카이브</title>
   <meta name="description" content="다카하시 신지(高橋信次) 이야기 237편 한국어 충실번역·만화 카드 전편 및 강연 동영상 아카이브 웹사이트입니다.">
+  
+  <!-- OpenGraph / SNS Sharing Meta Tags -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="다카하시 신지 이야기 237편 & 강연 동영상 아카이브">
+  <meta property="og:description" content="다카하시 신지의 237편 일대기 충실번역·만화 카드 전편 완비 및 47편 강연 동영상 아카이브">
+  <meta property="og:image" content="images/stories/thumbs/001.webp">
   <meta name="theme-color" content="#0f0a1c">
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -40,10 +46,12 @@
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
           <input type="text" id="searchInput" placeholder="이야기 번호, 제목, 키워드 검색...">
+          <button class="search-clear-btn" id="searchClearBtn" aria-label="검색어 지우기" title="검색어 지우기" style="display: none;">&times;</button>
         </div>
       </div>
     </div>
   </header>
+
 
   <!-- Main Content Container -->
   <main class="app-container">
@@ -219,6 +227,20 @@
         <!-- Right / Panel 2: Full Translation Reader -->
         <div class="story-text-panel" id="storyTextPanel">
           
+          <!-- Reader Action Toolbar -->
+          <div class="reader-toolbar">
+            <div class="font-size-controls">
+              <span class="toolbar-label">글자 크기</span>
+              <button class="font-btn" id="btnFontDecrease" title="글자 작게">A-</button>
+              <span class="font-indicator" id="fontIndicator">100%</span>
+              <button class="font-btn" id="btnFontIncrease" title="글자 크게">A+</button>
+            </div>
+            <div class="reader-toolbar-actions">
+              <button class="toolbar-action-btn" id="btnCopyStoryText" title="본문 전문 클립보드 복사">📋 본문 복사</button>
+              <button class="toolbar-action-btn" id="btnShareStory" title="이야기 링크 복사">🔗 링크 공유</button>
+            </div>
+          </div>
+
           <!-- Meta Details Box -->
           <div class="story-meta-card">
             <div class="meta-row" id="rowOrigTitle">
@@ -311,10 +333,17 @@
     </div>
   </div>
 
+  <!-- Floating Scroll-to-Top Button -->
+  <button class="scroll-top-btn" id="scrollTopBtn" aria-label="맨 위로 이동" title="맨 위로 이동">▲</button>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-box" id="toastBox"></div>
+
   <!-- Footer -->
   <footer class="site-footer">
     <p>© Shinji Takahashi Korean Translation Archive. 다카하시 신지 이야기 237편 & 강연 동영상</p>
   </footer>
+
 
 
   <!-- Scripts -->
