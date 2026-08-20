@@ -174,14 +174,17 @@ document.addEventListener('DOMContentLoaded', () => {
       btnOpenCommandPalette.addEventListener('click', openCommandPalette);
     }
 
-    // Continue Reading Button
+    // Continue Reading / Watching Button (Mode-Aware)
     if (btnContinueStory) {
       btnContinueStory.addEventListener('click', () => {
-        const lastId = parseInt(localStorage.getItem('shinji_last_story'), 10);
-        const story = STORIES_DATA.find(s => s.id === lastId);
-        if (story) {
-          switchMode('story');
-          openStoryModal(story);
+        if (currentMode === 'story') {
+          const lastId = parseInt(localStorage.getItem('shinji_last_story'), 10);
+          const story = STORIES_DATA.find(s => s.id === lastId);
+          if (story) openStoryModal(story);
+        } else {
+          const lastVidId = parseInt(localStorage.getItem('shinji_last_video'), 10);
+          const video = LECTURE_DATA.find(v => v.id === lastVidId);
+          if (video) openVideoModal(video);
         }
       });
     }
@@ -420,16 +423,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Check and display "Continue Reading"
+  // Check and display "Continue Reading / Watching" (Mode-Aware)
   function checkContinueReading() {
-    const lastId = parseInt(localStorage.getItem('shinji_last_story'), 10);
-    if (lastId && continueReadingBanner) {
-      const story = STORIES_DATA.find(s => s.id === lastId);
-      if (story) {
-        continueStoryTitle.textContent = `${story.number} ${story.title}`;
-        continueReadingBanner.style.display = 'inline-flex';
+    if (!continueReadingBanner) return;
+
+    if (currentMode === 'story') {
+      const lastId = parseInt(localStorage.getItem('shinji_last_story'), 10);
+      if (lastId) {
+        const story = STORIES_DATA.find(s => s.id === lastId);
+        if (story) {
+          const iconEl = continueReadingBanner.querySelector('.continue-icon');
+          const btnEl = continueReadingBanner.querySelector('.continue-btn');
+          if (iconEl) iconEl.textContent = '🔖';
+          if (btnEl) btnEl.textContent = '이어서 보기 ➔';
+          continueStoryTitle.textContent = `${story.number} ${story.title}`;
+          continueReadingBanner.style.display = 'inline-flex';
+          return;
+        }
+      }
+    } else if (currentMode === 'video') {
+      const lastVidId = parseInt(localStorage.getItem('shinji_last_video'), 10);
+      if (lastVidId) {
+        const video = LECTURE_DATA.find(v => v.id === lastVidId);
+        if (video) {
+          const iconEl = continueReadingBanner.querySelector('.continue-icon');
+          const btnEl = continueReadingBanner.querySelector('.continue-btn');
+          if (iconEl) iconEl.textContent = '🎬';
+          if (btnEl) btnEl.textContent = '이어서 시청 ➔';
+          continueStoryTitle.textContent = `${video.number} ${video.title}`;
+          continueReadingBanner.style.display = 'inline-flex';
+          return;
+        }
       }
     }
+
+    continueReadingBanner.style.display = 'none';
   }
 
   // ========================================================
@@ -651,6 +679,8 @@ document.addEventListener('DOMContentLoaded', () => {
       subStat2.textContent = '무료 시청 & 강연록';
       totalCountEl.textContent = activeLectures.length;
     }
+
+    checkContinueReading();
   }
 
   // ========================================================
@@ -1128,6 +1158,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     videoModalBackdrop.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    // Save Last Video
+    localStorage.setItem('shinji_last_video', item.id);
+    checkContinueReading();
 
     if (history.replaceState) {
       history.replaceState(null, '', `#video-${item.id}`);
