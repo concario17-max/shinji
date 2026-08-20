@@ -1,5 +1,6 @@
 """
-다카하시 신지 이야기(001~236) PDF 자동 파서 및 데이터 생성 스크립트
+다카하시 신지 이야기(001~237) PDF 자동 파서 및 데이터 생성 스크립트
+236번(종합 서술) 및 237번(마지막 후기) 분리 지원
 """
 
 import os
@@ -88,9 +89,9 @@ def main():
             'name': '제5장',
             'title': '신리의 완성과 인류·지구의 미래',
             'fullTitle': '제5장 · 신리의 완성과 인류·지구의 미래',
-            'range': '201–236',
+            'range': '201–237',
             'badgeColor': 'rose',
-            'flow': '새로운 부활 → 태양계의 천사들 → 지구와 인류 → 신리의 궁극적 방향 → 마지막 기록'
+            'flow': '새로운 부활 → 태양계의 천사들 → 지구와 인류 → 마지막 기록 및 후기'
         }
     }
 
@@ -110,8 +111,95 @@ def main():
         else:
             chap_num = 5
 
+        # Special Handling for Item 236 (Split into 236 and 237)
+        if item_id == 236:
+            # Check for '후기' in body
+            m_hooki = re.search(r'\n후기\s*\n', raw_body)
+            if m_hooki:
+                raw_236 = raw_body[:m_hooki.start()].strip()
+                raw_237 = raw_body[m_hooki.end():].strip()
+            else:
+                raw_236 = raw_body
+                raw_237 = ""
+
+            # Story 236: 신지 선생에 대한 종합 서술
+            orig_title_236 = '「高橋信次師物語」 真のメシヤの記録 236　八起正法先生編'
+            content_type_236 = '웹 편집자의 종합 서술 및 신앙적 해석'
+            
+            # Extract notes/caution in 236
+            m_notes_236 = re.search(r'\n(사실\s*관계\s*주의[^\n]*\n|참고[^\n]*\n|번역\s*메모[^\n]*\n)', raw_236)
+            if m_notes_236:
+                body_236 = raw_236[:m_notes_236.start()].strip()
+                notes_236 = raw_236[m_notes_236.start():].strip()
+            else:
+                body_236 = raw_236.strip()
+                notes_236 = ""
+            
+            # Clean 원제/내용성격 if inside body
+            body_236 = re.sub(r'원제:[^\n]+\n', '', body_236).strip()
+            body_236 = re.sub(r'내용\s*성격:[^\n]+\n', '', body_236).strip()
+
+            clean_body_236 = re.sub(r'\s+', ' ', body_236)
+            summary_236 = clean_body_236[:140] + ('...' if len(clean_body_236) > 140 else '')
+
+            img_236 = 'images/stories/236.png'
+            has_img_236 = os.path.exists(os.path.join(dst_images_dir, '236.png'))
+
+            stories.append({
+                'id': 236,
+                'number': '#236',
+                'num': '236',
+                'chapter': 5,
+                'chapterMeta': CHAPTER_METAS[5],
+                'title': '신지 선생에 대한 종합 서술',
+                'origTitle': orig_title_236,
+                'contentType': content_type_236,
+                'summary': summary_236,
+                'body': body_236,
+                'notes': notes_236,
+                'image': img_236,
+                'hasImage': has_img_236
+            })
+
+            # Story 237: [후기] 자료를 모아 '신지 사' 이야기로
+            orig_title_237 = '後記 - 資料を集めて「信次師」物語へ'
+            content_type_237 = '웹 편집자의 집필 회고 및 감사 맺음말'
+
+            m_notes_237 = re.search(r'\n(원문·자료\s*대조\s*참고[^\n]*\n|참고[^\n]*\n|번역\s*메모[^\n]*\n)', raw_237)
+            if m_notes_237:
+                body_237 = raw_237[:m_notes_237.start()].strip()
+                notes_237 = raw_237[m_notes_237.start():].strip()
+            else:
+                body_237 = raw_237.strip()
+                notes_237 = ""
+
+            clean_body_237 = re.sub(r'\s+', ' ', body_237)
+            summary_237 = clean_body_237[:140] + ('...' if len(clean_body_237) > 140 else '')
+
+            img_237 = 'images/stories/237.png'
+            has_img_237 = os.path.exists(os.path.join(dst_images_dir, '237.png'))
+
+            stories.append({
+                'id': 237,
+                'number': '#237',
+                'num': '237',
+                'chapter': 5,
+                'chapterMeta': CHAPTER_METAS[5],
+                'title': '[후기] 자료를 모아 ‘신지 사(信次師)’ 이야기로',
+                'origTitle': orig_title_237,
+                'contentType': content_type_237,
+                'summary': summary_237,
+                'body': body_237,
+                'notes': notes_237,
+                'image': img_237,
+                'hasImage': has_img_237
+            })
+            continue
+
+        # Regular Items (001 ~ 235)
         orig_title = ''
         content_type = ''
+        notes_text = ''
         m_orig = re.search(r'원제:\s*([^\n]+)', raw_body)
         if m_orig:
             orig_title = m_orig.group(1).strip()
@@ -130,7 +218,7 @@ def main():
             if m_type:
                 main_content = main_content.replace(m_type.group(0), '')
 
-        m_notes = re.search(r'\n(번역\s*메모[^\n]*\n|참고[^\n]*\n|편집자\s*(?:신앙\s*)?고백[^\n]*\n|편집자의\s*종교적\s*해석[^\n]*\n)', main_content)
+        m_notes = re.search(r'\n(번역\s*메모[^\n]*\n|참고[^\n]*\n|편집자\s*(?:신앙\s*)?고백[^\n]*\n|편집자의\s*종교적\s*해석[^\n]*\n|사실\s*관계\s*주의[^\n]*\n)', main_content)
         if m_notes:
             body_text = main_content[:m_notes.start()].strip()
             notes_text = main_content[m_notes.start():].strip()
@@ -159,9 +247,12 @@ def main():
             'hasImage': has_image
         })
 
+    # Sort stories by id just in case
+    stories.sort(key=lambda s: s['id'])
+
     js_content = f'''/**
- * 다카하시 신지 이야기 (高橋信次物語) 전체 데이터베이스 (001~236)
- * 5개 장 구성 및 1:1 만화/번역 매핑
+ * 다카하시 신지 이야기 (高橋信次物語) 전체 데이터베이스 (001~237)
+ * 5개 장 구성 및 1:1 만화/번역 완벽 매핑
  */
 
 const STORY_CHAPTERS = {json.dumps(list(CHAPTER_METAS.values()), ensure_ascii=False, indent=2)};
@@ -173,6 +264,7 @@ const STORIES_DATA = {json.dumps(stories, ensure_ascii=False, indent=2)};
         f.write(js_content)
 
     print(f"Generated {out_js_path} with {len(stories)} stories.")
+    print(f"Stories with image: {sum(1 for s in stories if s['hasImage'])} / {len(stories)}")
 
 if __name__ == '__main__':
     main()

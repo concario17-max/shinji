@@ -201,11 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
       storiesSection.style.display = 'block';
       videosSection.style.display = 'none';
       
-      heroTitle.textContent = '다카하시 신지 이야기 · 236편 완역';
-      heroSubtitle.textContent = '5개 장으로 완성된 신지의 일대기와 영적 진리, 그리고 요약 만화 카드와 충실 번역 전문을 제공합니다.';
+      heroTitle.textContent = '다카하시 신지 이야기 · 237편 완역';
+      heroSubtitle.textContent = '5개 장으로 완성된 신지의 일대기와 영적 진리, 그리고 237편 요약 만화 카드와 충실 번역 전문을 제공합니다.';
       searchInput.placeholder = '이야기 번호, 제목, 키워드 검색...';
       subStat1.textContent = '5개 장 체계';
-      subStat2.textContent = '만화 요약 & 완역 전문 1:1';
+      subStat2.textContent = '237편 만화 요약 & 완역 전문 1:1';
       totalCountEl.textContent = activeStories.length;
     } else {
       modeVideoBtn.classList.add('active');
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chapBannerBadge.textContent = chapMeta.name;
         chapBannerBadge.className = `chapter-badge-lg chap-${chapMeta.id}`;
         chapBannerTitle.textContent = chapMeta.title;
-        chapBannerRange.textContent = `${chapMeta.range} (총 ${chapMeta.id === 5 ? 36 : 50}편)`;
+        chapBannerRange.textContent = `${chapMeta.range} (총 ${chapMeta.id === 5 ? 37 : 50}편)`;
         chapBannerFlow.textContent = chapMeta.flow;
       }
     } else {
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Counter
-    storyModalIndex.textContent = `${item.num} / 236`;
+    storyModalIndex.textContent = `${item.num} / ${typeof STORIES_DATA !== 'undefined' ? STORIES_DATA.length : 237}`;
 
     // Scroll panels to top
     const mangaPanel = document.getElementById('storyMangaPanel');
