@@ -1,19 +1,22 @@
 /**
- * Application Logic for Shinji Takahashi Archive Website
- * Supports:
- * 1. 📖 다카하시 신지 이야기 (237편 완역 & 즉시 몰입형 풀스크린 만화 뷰어 & 슬라이드 번역 전문)
- * 2. ⛶ 브라우저 전체화면(F11) 원클릭 토글 (단축키: F / 더블클릭)
- * 3. 🎬 강연 동영상 아카이브 (47편 노래/DVD/CD & 타임스탬프 목차)
- * 4. 🔍 스마트 정밀 검색 & Empty State
- * 5. 🔗 URL 해시 딥링크 (#story-001, #video-01)
- * 6. 📖 본문 글자 크기 조절 (A- / A+), 전문 복사, 링크 공유
- * 7. 🚀 Scroll-to-Top 플로팅 버튼
+ * Application Logic for Shinji Takahashi Luxury Archive Website
+ * 
+ * Features:
+ * 1. 📖 다카하시 신지 이야기 (237편 완역 & 3D 럭셔리 카드 & 몰입형 풀스크린 뷰어)
+ * 2. 🎨 뷰어 테마 3종 토글 (시네마 다크 / OLED 딥블랙 / 세피아 웜)
+ * 3. ⭐ 나만의 즐겨찾기(북마크) 보관함 시스템 (LocalStorage 연동)
+ * 4. 🔖 "지난번에 읽던 이야기 이어보기" 배너 (자동 기억)
+ * 5. ⚡ 초고속 점프 커맨드 팔레트 (Ctrl + K / Cmd + K)
+ * 6. ⛶ 브라우저 전체화면(F11) 토글 (단축키: F / 더블클릭)
+ * 7. 📱 모바일 터치 스와이프 제스처 네비게이션
+ * 8. 🎬 강연 동영상 아카이브 (47편 노래/DVD/CD & 타임스탬프 목차)
+ * 9. 🔍 스마트 정밀 검색 & URL 해시 딥링크 (#story-001, #video-01)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   // Global State
   let currentMode = 'story'; // 'story' | 'video'
-  let storyChapter = 'all';  // 'all' | '1' | '2' | '3' | '4' | '5'
+  let storyChapter = 'all';  // 'all' | '1' | '2' | '3' | '4' | '5' | 'bookmark'
   let videoCategory = 'all'; // 'all' | '노래' | 'DVD' | 'CD'
   let searchQuery = '';
   
@@ -23,6 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentStoryIndex = 0; // index in activeStories
   let isTranslationDrawerOpen = false;
   let currentFontSizePercent = 100; // 85 | 100 | 115 | 130
+  
+  // Bookmarks & Preferences (LocalStorage)
+  let bookmarkedIds = JSON.parse(localStorage.getItem('shinji_bookmarks') || '[]');
+  let currentViewerTheme = localStorage.getItem('shinji_viewer_theme') || 'cinema';
 
   // Pagination / Chunk Loading
   const STORY_CHUNK = 12;
@@ -39,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const videosSection = document.getElementById('videosSection');
   const searchInput = document.getElementById('searchInput');
   const searchClearBtn = document.getElementById('searchClearBtn');
+  const btnOpenCommandPalette = document.getElementById('btnOpenCommandPalette');
   const heroTitle = document.getElementById('heroTitle');
   const heroSubtitle = document.getElementById('heroSubtitle');
   const totalCountEl = document.getElementById('totalCount');
@@ -47,8 +55,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const scrollTopBtn = document.getElementById('scrollTopBtn');
   const toastBox = document.getElementById('toastBox');
 
+  // Continue Reading Banner
+  const continueReadingBanner = document.getElementById('continueReadingBanner');
+  const continueStoryTitle = document.getElementById('continueStoryTitle');
+  const btnContinueStory = document.getElementById('btnContinueStory');
+
   // DOM Elements - Stories
   const chapFilterBtns = document.querySelectorAll('.chap-filter-btn');
+  const bookmarkCountPill = document.getElementById('bookmarkCountPill');
   const chapterInfoBanner = document.getElementById('chapterInfoBanner');
   const chapBannerBadge = document.getElementById('chapBannerBadge');
   const chapBannerTitle = document.getElementById('chapBannerTitle');
@@ -70,6 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const storyPrevBtn = document.getElementById('storyPrevBtn');
   const storyNextBtn = document.getElementById('storyNextBtn');
   const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
+  const btnBookmarkStory = document.getElementById('btnBookmarkStory');
+  const btnThemeSelector = document.getElementById('btnThemeSelector');
+  const themeLabel = document.getElementById('themeLabel');
 
   // DOM Elements - Drawer & Translation
   const btnToggleTranslation = document.getElementById('btnToggleTranslation');
@@ -88,6 +105,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCopyStoryText = document.getElementById('btnCopyStoryText');
   const btnShareStory = document.getElementById('btnShareStory');
 
+  // DOM Elements - Command Palette
+  const cmdPaletteModal = document.getElementById('cmdPaletteModal');
+  const cmdPaletteInput = document.getElementById('cmdPaletteInput');
+  const cmdResultsList = document.getElementById('cmdResultsList');
+  let cmdActiveIndex = 0;
+  let cmdFilteredItems = [];
+
   // DOM Elements - Videos
   const filterBtns = document.querySelectorAll('.filter-btn');
   const videoGrid = document.getElementById('videoGrid');
@@ -104,6 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
   init();
 
   function init() {
+    applyViewerTheme(currentViewerTheme);
+    updateBookmarkCountPill();
+    checkContinueReading();
     setupEventListeners();
     updateStoriesData();
     updateVideosData();
@@ -142,6 +169,23 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    // Command Palette Trigger
+    if (btnOpenCommandPalette) {
+      btnOpenCommandPalette.addEventListener('click', openCommandPalette);
+    }
+
+    // Continue Reading Button
+    if (btnContinueStory) {
+      btnContinueStory.addEventListener('click', () => {
+        const lastId = parseInt(localStorage.getItem('shinji_last_story'), 10);
+        const story = STORIES_DATA.find(s => s.id === lastId);
+        if (story) {
+          switchMode('story');
+          openStoryModal(story);
+        }
+      });
+    }
+
     // Story Chapter Filters
     chapFilterBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -163,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Native Browser Fullscreen (F11) Toggle
+    // Fullscreen Toggle
     if (btnToggleFullscreen) {
       btnToggleFullscreen.addEventListener('click', toggleFullscreen);
     }
@@ -172,6 +216,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     document.addEventListener('fullscreenchange', updateFullscreenUI);
     document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+
+    // Bookmark Toggle inside Story Viewer
+    if (btnBookmarkStory) {
+      btnBookmarkStory.addEventListener('click', toggleCurrentStoryBookmark);
+    }
+
+    // Theme Switcher inside Story Viewer
+    if (btnThemeSelector) {
+      btnThemeSelector.addEventListener('click', cycleViewerTheme);
+    }
 
     // Fullscreen Story Viewer Drawer Toggle
     if (btnToggleTranslation) {
@@ -202,13 +256,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Story Modal Close
     storyModalCloseBtn.addEventListener('click', closeStoryModal);
     storyMangaPanel.addEventListener('click', (e) => {
-      // If user clicked canvas background (outside image), close modal
       if (e.target === storyMangaPanel || e.target.classList.contains('comic-image-wrapper')) {
         closeStoryModal();
       }
     });
 
-    // Mobile Touch Swipe Navigation (좌우 터치 스와이프로 만화 넘기기)
+    // Mobile Touch Swipe Navigation
     let touchStartX = 0;
     let touchStartY = 0;
     let touchEndX = 0;
@@ -258,8 +311,32 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Keyboard Shortcuts
+    // Global Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
+      // Command Palette (Ctrl + K or Cmd + K)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        openCommandPalette();
+        return;
+      }
+
+      // Command Palette active state
+      if (cmdPaletteModal && cmdPaletteModal.classList.contains('active')) {
+        if (e.key === 'Escape') {
+          closeCommandPalette();
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          moveCmdHighlight(1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          moveCmdHighlight(-1);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          selectCmdItem();
+        }
+        return;
+      }
+
       if (e.key === 'Escape') {
         if (storyModalBackdrop.classList.contains('active')) {
           closeStoryModal();
@@ -273,12 +350,27 @@ document.addEventListener('DOMContentLoaded', () => {
           navigateStory(1);
         } else if (e.key === 't' || e.key === 'T' || e.key === 'ㅅ') {
           toggleTranslationDrawer();
+        } else if (e.key === 'b' || e.key === 'B' || e.key === 'ㅠ') {
+          toggleCurrentStoryBookmark();
         } else if (e.key === 'f' || e.key === 'F' || e.key === 'ㄹ' || e.key === 'F11') {
           e.preventDefault();
           toggleFullscreen();
         }
       }
     });
+
+    // Command Palette Input Events
+    if (cmdPaletteInput) {
+      cmdPaletteInput.addEventListener('input', (e) => {
+        renderCmdResults(e.target.value.trim());
+      });
+    }
+
+    if (cmdPaletteModal) {
+      cmdPaletteModal.addEventListener('click', (e) => {
+        if (e.target === cmdPaletteModal) closeCommandPalette();
+      });
+    }
 
     // Scroll Handler for Infinite Loading
     window.addEventListener('scroll', handleScroll);
@@ -287,7 +379,171 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('hashchange', checkUrlHash);
   }
 
-  // Native Fullscreen API Handler (F11 equivalent)
+  // ========================================================
+  // ⭐ BOOKMARK & FAVORITES SYSTEM
+  // ========================================================
+  function toggleCurrentStoryBookmark() {
+    const item = activeStories[currentStoryIndex];
+    if (!item) return;
+
+    const isBookmarked = bookmarkedIds.includes(item.id);
+    if (isBookmarked) {
+      bookmarkedIds = bookmarkedIds.filter(id => id !== item.id);
+      showToast('☆ 즐겨찾기 보관함에서 삭제되었습니다.');
+    } else {
+      bookmarkedIds.push(item.id);
+      showToast('⭐ 즐겨찾기 보관함에 저장되었습니다!');
+    }
+
+    localStorage.setItem('shinji_bookmarks', JSON.stringify(bookmarkedIds));
+    updateBookmarkButtonUI(item.id);
+    updateBookmarkCountPill();
+
+    if (storyChapter === 'bookmark') {
+      updateStoriesData();
+    }
+  }
+
+  function updateBookmarkButtonUI(storyId) {
+    if (!btnBookmarkStory) return;
+    const isBookmarked = bookmarkedIds.includes(storyId);
+    btnBookmarkStory.classList.toggle('bookmarked', isBookmarked);
+    const starIcon = btnBookmarkStory.querySelector('.btn-star-icon');
+    const label = btnBookmarkStory.querySelector('.btn-tool-label');
+    if (starIcon) starIcon.textContent = isBookmarked ? '★' : '☆';
+    if (label) label.textContent = isBookmarked ? '보관됨' : '보관';
+  }
+
+  function updateBookmarkCountPill() {
+    if (bookmarkCountPill) {
+      bookmarkCountPill.textContent = bookmarkedIds.length;
+    }
+  }
+
+  // Check and display "Continue Reading"
+  function checkContinueReading() {
+    const lastId = parseInt(localStorage.getItem('shinji_last_story'), 10);
+    if (lastId && continueReadingBanner) {
+      const story = STORIES_DATA.find(s => s.id === lastId);
+      if (story) {
+        continueStoryTitle.textContent = `${story.number} ${story.title}`;
+        continueReadingBanner.style.display = 'inline-flex';
+      }
+    }
+  }
+
+  // ========================================================
+  // 🎨 VIEWER THEMES (Cinema, OLED Black, Sepia Paper)
+  // ========================================================
+  function cycleViewerTheme() {
+    const themes = ['cinema', 'oled', 'sepia'];
+    const nextIdx = (themes.indexOf(currentViewerTheme) + 1) % themes.length;
+    currentViewerTheme = themes[nextIdx];
+    localStorage.setItem('shinji_viewer_theme', currentViewerTheme);
+    applyViewerTheme(currentViewerTheme);
+
+    const names = { cinema: '시네마 다크', oled: 'OLED 블랙', sepia: '세피아 웜' };
+    showToast(`🎨 독서 테마: ${names[currentViewerTheme]}`);
+  }
+
+  function applyViewerTheme(theme) {
+    if (!storyModalBackdrop) return;
+    storyModalBackdrop.setAttribute('data-theme', theme);
+    if (themeLabel) {
+      const names = { cinema: '시네마', oled: 'OLED', sepia: '세피아' };
+      themeLabel.textContent = names[theme] || '테마';
+    }
+  }
+
+  // ========================================================
+  // ⚡ COMMAND PALETTE (Ctrl + K)
+  // ========================================================
+  function openCommandPalette() {
+    if (!cmdPaletteModal) return;
+    cmdPaletteModal.classList.add('active');
+    cmdPaletteInput.value = '';
+    cmdActiveIndex = 0;
+    renderCmdResults('');
+    setTimeout(() => cmdPaletteInput.focus(), 50);
+  }
+
+  function closeCommandPalette() {
+    if (!cmdPaletteModal) return;
+    cmdPaletteModal.classList.remove('active');
+  }
+
+  function renderCmdResults(query) {
+    const cleanQ = query.toLowerCase();
+    cmdResultsList.innerHTML = '';
+
+    if (!cleanQ) {
+      // Show first 15 stories by default
+      cmdFilteredItems = STORIES_DATA.slice(0, 15);
+    } else {
+      const numMatch = query.match(/^\d+$/);
+      if (numMatch) {
+        const targetId = parseInt(numMatch[0], 10);
+        cmdFilteredItems = STORIES_DATA.filter(s => s.id === targetId || s.num.includes(numMatch[0])).slice(0, 20);
+      } else {
+        cmdFilteredItems = STORIES_DATA.filter(s =>
+          s.title.toLowerCase().includes(cleanQ) ||
+          s.number.toLowerCase().includes(cleanQ) ||
+          s.summary.toLowerCase().includes(cleanQ)
+        ).slice(0, 20);
+      }
+    }
+
+    if (cmdFilteredItems.length === 0) {
+      cmdResultsList.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-dim); font-size: 0.86rem;">
+          일치하는 항목이 없습니다.
+        </div>
+      `;
+      return;
+    }
+
+    cmdActiveIndex = 0;
+    cmdFilteredItems.forEach((item, idx) => {
+      const el = document.createElement('div');
+      el.className = `cmd-item ${idx === 0 ? 'active' : ''}`;
+      el.innerHTML = `
+        <div class="cmd-item-left">
+          <span class="cmd-item-num">${item.number}</span>
+          <span class="cmd-item-title">${item.title}</span>
+        </div>
+        <span class="cmd-item-chap">제${item.chapter}장</span>
+      `;
+      el.addEventListener('click', () => {
+        closeCommandPalette();
+        switchMode('story');
+        openStoryModal(item);
+      });
+      cmdResultsList.appendChild(el);
+    });
+  }
+
+  function moveCmdHighlight(direction) {
+    const items = cmdResultsList.querySelectorAll('.cmd-item');
+    if (items.length === 0) return;
+
+    items[cmdActiveIndex]?.classList.remove('active');
+    cmdActiveIndex = (cmdActiveIndex + direction + items.length) % items.length;
+    items[cmdActiveIndex]?.classList.add('active');
+    items[cmdActiveIndex]?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function selectCmdItem() {
+    if (cmdFilteredItems[cmdActiveIndex]) {
+      const target = cmdFilteredItems[cmdActiveIndex];
+      closeCommandPalette();
+      switchMode('story');
+      openStoryModal(target);
+    }
+  }
+
+  // ========================================================
+  // FULLSCREEN HANDLER (F11)
+  // ========================================================
   function toggleFullscreen(e) {
     if (e && e.preventDefault) {
       e.preventDefault();
@@ -313,13 +569,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           const promise = requestMethod.call(docEl);
           if (promise && promise.catch) {
-            promise.catch(err => {
-              console.warn('Fullscreen request rejected:', err);
-              showToast('💡 키보드의 F11 키를 직접 누르면 전체화면으로 전환됩니다.');
+            promise.catch(() => {
+              showToast('💡 브라우저 F11 키를 직접 누르면 전체화면으로 전환됩니다.');
             });
           }
         } catch (err) {
-          console.warn('Fullscreen execution exception:', err);
           showToast('💡 키보드의 F11 키를 직접 누르면 전체화면으로 전환됩니다.');
         }
       } else {
@@ -334,12 +588,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (exitMethod) {
         try {
           const promise = exitMethod.call(document);
-          if (promise && promise.catch) {
-            promise.catch(() => {});
-          }
-        } catch (err) {
-          console.warn('Exit fullscreen error:', err);
-        }
+          if (promise && promise.catch) promise.catch(() => {});
+        } catch (err) {}
       }
     }
   }
@@ -404,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ========================================================
-  // STORY SECTION LOGIC (Smart Number Search & Empty State)
+  // STORY SECTION LOGIC (Smart Number Search & Bookmarks)
   // ========================================================
   function updateStoriesData() {
     const rawQ = (searchQuery || '').trim();
@@ -414,8 +664,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetNum = isNumSearch ? parseInt(rawQ.replace('#', ''), 10) : null;
 
     activeStories = STORIES_DATA.filter(item => {
-      const matchChapter = (storyChapter === 'all') || (item.chapter === parseInt(storyChapter));
-      if (!matchChapter) return false;
+      // Check Bookmark Tab
+      if (storyChapter === 'bookmark') {
+        if (!bookmarkedIds.includes(item.id)) return false;
+      } else if (storyChapter !== 'all') {
+        if (item.chapter !== parseInt(storyChapter)) return false;
+      }
+
       if (!cleanQ) return true;
 
       if (targetNum !== null) {
@@ -442,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Update Chapter Roadmap Banner
-    if (storyChapter !== 'all' && typeof STORY_CHAPTERS !== 'undefined') {
+    if (storyChapter !== 'all' && storyChapter !== 'bookmark' && typeof STORY_CHAPTERS !== 'undefined') {
       const chapMeta = STORY_CHAPTERS.find(c => c.id === parseInt(storyChapter));
       if (chapMeta) {
         chapterInfoBanner.style.display = 'flex';
@@ -461,22 +716,32 @@ document.addEventListener('DOMContentLoaded', () => {
     loadedStoryCount = 0;
 
     if (activeStories.length === 0) {
-      storyGrid.innerHTML = `
-        <div class="empty-state-card">
-          <div class="empty-state-icon">🔍</div>
-          <h3 class="empty-state-title">일치하는 이야기가 없습니다</h3>
-          <p class="empty-state-desc">'<strong>${escapeHtml(rawQ)}</strong>' 검색어와 일치하는 항목을 찾을 수 없습니다.<br>번호(예: 1, 237) 또는 다른 키워드로 검색해 보세요.</p>
-          <button class="empty-state-btn" id="btnResetStorySearch">전체 목록 보기</button>
-        </div>
-      `;
-      const resetBtn = document.getElementById('btnResetStorySearch');
-      if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-          searchInput.value = '';
-          searchQuery = '';
-          if (searchClearBtn) searchClearBtn.style.display = 'none';
-          updateStoriesData();
-        });
+      if (storyChapter === 'bookmark') {
+        storyGrid.innerHTML = `
+          <div class="empty-state-card">
+            <div class="empty-state-icon">⭐</div>
+            <h3 class="empty-state-title">보관함이 비어 있습니다</h3>
+            <p class="empty-state-desc">감명 깊은 이야기의 상단 <strong>[ ⭐ 보관 ]</strong> 버튼을 누르면<br>언제든 이곳에서 모아서 감상하실 수 있습니다.</p>
+          </div>
+        `;
+      } else {
+        storyGrid.innerHTML = `
+          <div class="empty-state-card">
+            <div class="empty-state-icon">🔍</div>
+            <h3 class="empty-state-title">일치하는 이야기가 없습니다</h3>
+            <p class="empty-state-desc">'<strong>${escapeHtml(rawQ)}</strong>' 검색어와 일치하는 항목을 찾을 수 없습니다.<br>번호(예: 1, 237) 또는 다른 키워드로 검색해 보세요.</p>
+            <button class="empty-state-btn" id="btnResetStorySearch">전체 목록 보기</button>
+          </div>
+        `;
+        const resetBtn = document.getElementById('btnResetStorySearch');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchQuery = '';
+            if (searchClearBtn) searchClearBtn.style.display = 'none';
+            updateStoriesData();
+          });
+        }
       }
       if (storyLoadingTrigger) storyLoadingTrigger.style.display = 'none';
       return;
@@ -559,6 +824,10 @@ document.addEventListener('DOMContentLoaded', () => {
     storyModalBackdrop.classList.add('active');
     document.body.style.overflow = 'hidden';
 
+    // Save Last Read
+    localStorage.setItem('shinji_last_story', item.id);
+    checkContinueReading();
+
     // Update URL hash for deep linking
     if (history.replaceState) {
       history.replaceState(null, '', `#story-${item.num}`);
@@ -574,6 +843,9 @@ document.addEventListener('DOMContentLoaded', () => {
     storyModalNumber.textContent = item.number;
     storyModalTitle.textContent = item.title;
     storyModalIndex.textContent = `${item.num} / ${typeof STORIES_DATA !== 'undefined' ? STORIES_DATA.length : 237}`;
+
+    // Update Bookmark UI
+    updateBookmarkButtonUI(item.id);
 
     // Load High-Res Comic Image
     storyModalImage.src = item.image;
@@ -630,6 +902,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextItem = activeStories[currentStoryIndex];
     renderStoryModalContent(nextItem);
 
+    localStorage.setItem('shinji_last_story', nextItem.id);
+    checkContinueReading();
+
     if (history.replaceState) {
       history.replaceState(null, '', `#story-${nextItem.num}`);
     }
@@ -653,7 +928,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function applyFontSize() {
     if (storyModalBodyText) {
-      storyModalBodyText.style.fontSize = `${(0.98 * currentFontSizePercent) / 100}rem`;
+      storyModalBodyText.style.fontSize = `${(1.02 * currentFontSizePercent) / 100}rem`;
     }
     if (fontIndicator) {
       fontIndicator.textContent = `${currentFontSizePercent}%`;

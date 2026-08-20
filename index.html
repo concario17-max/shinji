@@ -11,10 +11,20 @@
   <meta property="og:title" content="다카하시 신지 이야기 237편 & 강연 동영상 아카이브">
   <meta property="og:description" content="다카하시 신지의 237편 일대기 번역·만화 카드 전편 완비 및 47편 강연 동영상 아카이브">
   <meta property="og:image" content="images/stories/thumbs/001.webp">
-  <meta name="theme-color" content="#0f0a1c">
-  <link rel="stylesheet" href="css/styles.css?v=2.3">
+  <meta name="theme-color" content="#0b0614">
+  
+  <!-- Google Fonts: Cinzel, Outfit, Noto Serif KR, Noto Sans KR -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700;800&family=Noto+Serif+KR:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/styles.css?v=3.0">
 </head>
 <body>
+
+  <!-- Ambient Luxury Glow Orbs -->
+  <div class="ambient-glow glow-top" aria-hidden="true"></div>
+  <div class="ambient-glow glow-center" aria-hidden="true"></div>
 
   <!-- Sticky Header Nav -->
   <header class="site-header">
@@ -46,6 +56,9 @@
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
           <input type="text" id="searchInput" placeholder="이야기 번호, 제목, 키워드 검색...">
+          <button class="cmd-palette-trigger-btn" id="btnOpenCommandPalette" title="빠른 점프 커맨드 팔레트 (Ctrl + K)">
+            <kbd>Ctrl+K</kbd>
+          </button>
           <button class="search-clear-btn" id="searchClearBtn" aria-label="검색어 지우기" title="검색어 지우기" style="display: none;">&times;</button>
         </div>
       </div>
@@ -58,12 +71,25 @@
     
     <!-- Hero Banner -->
     <section class="hero-banner" id="heroBanner">
-      <h2 id="heroTitle">다카하시 신지 이야기 · 237편 완역</h2>
-      <p id="heroSubtitle">5개 장으로 완성된 신지의 일대기와 영적 진리, 그리고 237편 요약 만화 카드와 번역 전문을 제공합니다.</p>
-      <div class="stats-pills" id="heroStats">
-        <span class="stat-pill">전체 <strong id="totalCount">237</strong>개 항목</span>
-        <span class="stat-pill" id="subStat1">5개 장 체계</span>
-        <span class="stat-pill" id="subStat2">237편 만화 요약 & 번역 전문 1:1</span>
+      <div class="hero-glow-mesh" aria-hidden="true"></div>
+      <div class="hero-content">
+        <div class="hero-super-tag">ARCHIVE OF TRUTH & LIFE</div>
+        <h2 id="heroTitle">다카하시 신지 이야기 · 237편 완역</h2>
+        <p id="heroSubtitle">5개 장으로 완성된 신지의 일대기와 영적 진리, 그리고 237편 요약 만화 카드와 번역 전문을 제공합니다.</p>
+        <div class="stats-pills" id="heroStats">
+          <span class="stat-pill">전체 <strong id="totalCount">237</strong>개 항목</span>
+          <span class="stat-pill" id="subStat1">5개 장 체계</span>
+          <span class="stat-pill" id="subStat2">237편 만화 요약 & 번역 전문 1:1</span>
+        </div>
+
+        <!-- Continue Reading Bookmark Banner -->
+        <div class="continue-reading-banner" id="continueReadingBanner" style="display: none;">
+          <div class="continue-content">
+            <span class="continue-icon">🔖</span>
+            <span class="continue-text">이전에 읽던 <strong id="continueStoryTitle">#001 이야기</strong>부터 이어서 감상하시겠습니까?</span>
+          </div>
+          <button class="continue-btn" id="btnContinueStory">이어서 보기 ➔</button>
+        </div>
       </div>
     </section>
 
@@ -100,6 +126,11 @@
           <span class="chap-btn-num">제5장</span>
           <span class="chap-btn-text">신리의 완성과 미래</span>
           <span class="chap-btn-range">201–237</span>
+        </button>
+        <button class="chap-filter-btn chap-bookmark" data-chapter="bookmark" title="즐겨찾기한 이야기 모아보기">
+          <span class="chap-btn-num">⭐</span>
+          <span class="chap-btn-text">보관함</span>
+          <span class="chap-btn-range" id="bookmarkCountPill">0</span>
         </button>
       </nav>
 
@@ -138,15 +169,15 @@
     <section class="content-section" id="videosSection" style="display: none;">
       
       <!-- Video Category Filter Bar -->
-      <nav class="filter-bar" aria-label="강의 주제 카테고리">
-        <button class="filter-btn active" data-category="all">전체 보기</button>
-        <button class="filter-btn" data-category="노래">노래</button>
-        <button class="filter-btn" data-category="DVD">DVD 강연</button>
-        <button class="filter-btn" data-category="CD">CD 음성</button>
-      </nav>
+      <div class="filter-bar" aria-label="동영상 카테고리 필터">
+        <button class="filter-btn active" data-category="all">전체 강연 (47)</button>
+        <button class="filter-btn" data-category="노래">🎵 노래 (1~6)</button>
+        <button class="filter-btn" data-category="DVD">📀 DVD 강연 (7~42)</button>
+        <button class="filter-btn" data-category="CD">🎙️ CD 음원 (43~47)</button>
+      </div>
 
       <!-- Video Cards Feed Grid -->
-      <div class="video-grid" id="videoGrid">
+      <div class="grid" id="videoGrid">
         <!-- Dynamically rendered via js/app.js -->
       </div>
 
@@ -157,7 +188,7 @@
           <div class="pulse-dot"></div>
           <div class="pulse-dot"></div>
         </div>
-        <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">마우스 휠이나 터치로 스크롤하여 더 보기...</p>
+        <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">스크롤하여 다음 강연 영상 더 보기...</p>
       </div>
 
     </section>
@@ -167,7 +198,7 @@
   <!-- ======================================================== -->
   <!-- IMMERSIVE FULLSCREEN COMIC & TRANSLATION VIEWER          -->
   <!-- ======================================================== -->
-  <div class="story-viewer-backdrop" id="storyModalBackdrop" role="dialog" aria-modal="true">
+  <div class="story-viewer-backdrop" id="storyModalBackdrop" role="dialog" aria-modal="true" data-theme="cinema">
     
     <!-- Top Floating Header -->
     <header class="viewer-top-bar">
@@ -179,7 +210,20 @@
       </div>
 
       <div class="viewer-actions-right">
-        <button class="viewer-fullscreen-btn" id="btnToggleFullscreen" title="브라우저 전체화면 전환 (단축키: F)">
+        <!-- Bookmark Star Button -->
+        <button class="viewer-tool-btn" id="btnBookmarkStory" title="즐겨찾기 보관함에 저장 (단축키: B)">
+          <span class="btn-star-icon">☆</span>
+          <span class="btn-tool-label">보관</span>
+        </button>
+
+        <!-- Theme Switcher Button -->
+        <button class="viewer-tool-btn" id="btnThemeSelector" title="독서 테마 전환 (시네마 / OLED / 세피아)">
+          <span class="btn-theme-icon">🎨</span>
+          <span class="btn-tool-label" id="themeLabel">시네마</span>
+        </button>
+
+        <!-- Fullscreen F11 Toggle Button -->
+        <button class="viewer-fullscreen-btn" id="btnToggleFullscreen" title="브라우저 전체화면 전환 (단축키: F / F11)">
           <svg class="fs-icon-enter" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
           </svg>
@@ -188,10 +232,14 @@
           </svg>
           <span class="fs-text">전체화면</span>
         </button>
+
+        <!-- Translation Drawer Toggle Button -->
         <button class="viewer-toggle-btn" id="btnToggleTranslation" title="번역 전문 보기 / 닫기 (단축키: T)">
           <span class="btn-icon">📄</span>
           <span class="btn-text">번역 전문</span>
         </button>
+
+        <!-- Close Button -->
         <button class="viewer-close-btn" id="storyModalCloseBtn" aria-label="닫기 (Esc)" title="닫기 (단축키: Esc)">&times;</button>
       </div>
     </header>
@@ -270,53 +318,59 @@
 
   </div>
 
-
   <!-- ======================================================== -->
-  <!-- MODAL 2: Fullscreen Comic Lightbox                       -->
+  <!-- COMMAND PALETTE MODAL (Ctrl + K)                         -->
   <!-- ======================================================== -->
-  <div class="lightbox-backdrop" id="lightboxBackdrop">
-    <button class="lightbox-close" id="lightboxCloseBtn">&times;</button>
-    <div class="lightbox-content">
-      <img id="lightboxImage" src="" alt="만화 카드 확대">
+  <div class="cmd-palette-backdrop" id="cmdPaletteModal" role="dialog" aria-modal="true">
+    <div class="cmd-palette-window">
+      <div class="cmd-input-wrap">
+        <svg class="cmd-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="cmdPaletteInput" placeholder="이야기 번호(1~237), 제목, 주제 빠른 점프..." autocomplete="off">
+        <kbd class="cmd-esc-kbd">ESC</kbd>
+      </div>
+      <div class="cmd-results-list" id="cmdResultsList">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="cmd-palette-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> 이동</span>
+        <span><kbd>Enter</kbd> 열기</span>
+        <span><kbd>ESC</kbd> 닫기</span>
+      </div>
     </div>
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL 3: Video Lecture Player Popup                      -->
+  <!-- MODAL: Video Lecture Player Modal                        -->
   <!-- ======================================================== -->
   <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
     <div class="modal-window">
       <div class="modal-drag-handle"></div>
-      <div class="modal-header">
-        <div class="modal-title-group">
-          <h3 id="modalTitle">강의 제목</h3>
-          <p id="modalJpTitle" style="font-size: 0.78rem; color: var(--text-muted);"></p>
-        </div>
-        <button class="modal-close-btn" id="modalCloseBtn" aria-label="닫기">&times;</button>
-      </div>
-
+      <button class="modal-close-btn" id="modalCloseBtn" aria-label="닫기">&times;</button>
+      
       <div class="modal-body">
-        <!-- Left: YouTube Video Frame -->
+        <!-- Left: YouTube Player -->
         <div class="modal-player-section">
-          <div class="iframe-container">
-            <iframe id="playerFrame" src="" title="강의 동영상 플레이어" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <div class="player-container">
+            <iframe id="playerFrame" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
           </div>
-          <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
-            <p>💡 <strong>시청 팁</strong>: 아래 타임스탬프 버튼을 누르면 해당 시간대로 바로 이동합니다.</p>
+          <div class="modal-meta">
+            <h3 id="modalTitle">강연 제목</h3>
+            <p id="modalJpTitle" class="modal-jp-title">日本語 タイトル</p>
           </div>
         </div>
 
-        <!-- Right: Transcript & Timestamps -->
+        <!-- Right: Timestamps & Summary Info -->
         <div class="modal-transcript-section">
-          <div>
-            <div class="section-label">주요 목차 (타임스탬프)</div>
+          <div class="tab-pane active" id="paneTimestamps">
+            <h4 class="pane-title">강의 타임스탬프 목차</h4>
             <div class="timestamp-list" id="timestampList">
               <!-- Rendered via JS -->
             </div>
-          </div>
-
-          <div>
-            <div class="section-label">한국어 번역 강연록 / 요약</div>
+            
+            <h4 class="pane-title" style="margin-top: 24px;">강의 요약 및 번역 안내</h4>
             <div class="transcript-text" id="transcriptText">
               <!-- Rendered via JS -->
             </div>
@@ -336,14 +390,13 @@
 
   <!-- Footer -->
   <footer class="site-footer">
-    <p>© Shinji Takahashi Korean Translation Archive. 다카하시 신지 이야기 237편 & 강연 동영상</p>
+    <div class="footer-brand">SHINJI TAKAHASHI ARCHIVE</div>
+    <p>© 2026 다카하시 신지(高橋信次) 이야기 237편 전편 번역 & 강연 아카이브 · 정법의 보존과 공유</p>
   </footer>
 
-
-
   <!-- Scripts -->
-  <script src="js/lectures-data.js?v=2.3"></script>
-  <script src="js/stories-data.js?v=2.3"></script>
-  <script src="js/app.js?v=2.3"></script>
+  <script src="js/lectures-data.js?v=3.0"></script>
+  <script src="js/stories-data.js?v=3.0"></script>
+  <script src="js/app.js?v=3.0"></script>
 </body>
 </html>
