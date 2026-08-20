@@ -1,14 +1,91 @@
 """
 다카하시 신지 이야기(001~237) PDF 자동 파서 및 데이터 생성 스크립트
-WebP 고화질 및 초경량 썸네일 경로 지원
+1. '충실번역' -> '번역' 명칭 정돈
+2. 자연스러운 문장 이어붙이기 & 단락별 줄바꿈(\n\n) 포맷팅
+3. WebP 고화질 및 초경량 썸네일 경로 지원
 """
 
 import os
 import sys
 import re
 import json
-import shutil
 import pypdf
+
+def reconstruct_paragraph(lines):
+    if not lines:
+        return ""
+    
+    result = ""
+    for i, line in enumerate(lines):
+        if i == 0:
+            result = line.strip()
+            continue
+        
+        prev_raw = lines[i-1]
+        curr_stripped = line.strip()
+        if not curr_stripped:
+            continue
+            
+        had_trailing_space = prev_raw.endswith((' ', '\t'))
+        
+        if had_trailing_space:
+            result += ' ' + curr_stripped
+        else:
+            # 줄 끝에 공백이 없던 경우 (한글 단어 중간 분리: 예: 원+을 -> 원을, 감사합니+다. -> 감사합니다.)
+            if result and re.search(r'[가-힣]$', result) and re.match(r'^[가-힣]', curr_stripped):
+                result += curr_stripped
+            else:
+                result += ' ' + curr_stripped
+                
+    return re.sub(r'[ \t]+', ' ', result).strip()
+
+def normalize_korean_paragraphs(raw_text):
+    if not raw_text:
+        return ""
+    
+    text = raw_text.replace('\r\n', '\n').replace('\r', '\n')
+    text = re.sub(r'다카하시\s*신지\s*이야기\s*·\s*001–236\s*통합본\s*\n\d+\s*\n', '', text)
+    
+    raw_lines = text.split('\n')
+    
+    paragraphs = []
+    current_para = []
+    
+    for raw_line in raw_lines:
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        if not stripped:
+            if current_para:
+                paragraphs.append(reconstruct_paragraph(current_para))
+                current_para = []
+            continue
+        
+        stripped = re.sub(r'^[\uf0a7\u2022]\s*', '• ', stripped)
+        
+        is_dialogue = stripped.startswith(('“', '"', '「', '『', '‘', "'"))
+        is_bullet = stripped.startswith(('•', '※', '·', '-', '*', '1.', '2.', '3.', '①', '②'))
+        
+        if current_para:
+            prev_line = current_para[-1].rstrip()
+            prev_stripped = prev_line.strip()
+            ends_sentence = prev_stripped.endswith(('.', '!', '?', '”', '"', '…', '’', '”'))
+            
+            if is_dialogue or is_bullet:
+                paragraphs.append(reconstruct_paragraph(current_para))
+                current_para = [raw_line]
+            elif ends_sentence and (is_dialogue or stripped.startswith(('또한', '그러나', '그러자', '그 후', '잠시 뒤', '남자는', '이처럼', '그리고', '그는', '그녀는', '마침내', '결국'))):
+                paragraphs.append(reconstruct_paragraph(current_para))
+                current_para = [raw_line]
+            else:
+                current_para.append(raw_line)
+        else:
+            current_para.append(raw_line)
+            
+    if current_para:
+        paragraphs.append(reconstruct_paragraph(current_para))
+        
+    result = '\n\n'.join(p for p in paragraphs if p)
+    return result
 
 def main():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,7 +99,6 @@ def main():
     os.makedirs(dst_thumbs_dir, exist_ok=True)
     os.makedirs(os.path.join(base_dir, 'js'), exist_ok=True)
 
-    # Parse PDF
     if not os.path.exists(pdf_path):
         print(f"PDF not found at {pdf_path}")
         return
@@ -114,7 +190,7 @@ def main():
             orig_title_236 = '「高橋信次師物語」 真のメシヤの記録 236　八起正法先生編'
             content_type_236 = '웹 편집자의 종합 서술 및 신앙적 해석'
 
-            m_notes_236 = re.search(r'\n(사실\s*관계\s*주의[^\n]*\n|참고[^\n]*\n|번역\s*메모[^\n]*\n)', raw_236)
+            m_notes_236 = re.search(r'\n(사실\s*관계\s*주의[^\n]*\n|참고[^\n]*\n|번역\s*(?:·\s*제작)?\s*메모[^\n]*\n)', raw_236)
             if m_notes_236:
                 body_236 = raw_236[:m_notes_236.start()].strip()
                 notes_236 = raw_236[m_notes_236.start():].strip()
@@ -124,6 +200,9 @@ def main():
 
             body_236 = re.sub(r'원제:[^\n]+\n', '', body_236).strip()
             body_236 = re.sub(r'내용\s*성격:[^\n]+\n', '', body_236).strip()
+
+            body_236 = normalize_korean_paragraphs(body_236)
+            notes_236 = normalize_korean_paragraphs(notes_236)
 
             clean_body_236 = re.sub(r'\s+', ' ', body_236)
             summary_236 = clean_body_236[:140] + ('...' if len(clean_body_236) > 140 else '')
@@ -152,13 +231,16 @@ def main():
             orig_title_237 = '後記 - 資料を集めて「信次師」物語へ'
             content_type_237 = '웹 편집자의 집필 회고 및 감사 맺음말'
 
-            m_notes_237 = re.search(r'\n(원문·자료\s*대조\s*참고[^\n]*\n|참고[^\n]*\n|번역\s*메모[^\n]*\n)', raw_237)
+            m_notes_237 = re.search(r'\n(원문·자료\s*대조\s*참고[^\n]*\n|참고[^\n]*\n|번역\s*(?:·\s*제작)?\s*메모[^\n]*\n)', raw_237)
             if m_notes_237:
                 body_237 = raw_237[:m_notes_237.start()].strip()
                 notes_237 = raw_237[m_notes_237.start():].strip()
             else:
                 body_237 = raw_237.strip()
                 notes_237 = ""
+
+            body_237 = normalize_korean_paragraphs(body_237)
+            notes_237 = normalize_korean_paragraphs(notes_237)
 
             clean_body_237 = re.sub(r'\s+', ' ', body_237)
             summary_237 = clean_body_237[:140] + ('...' if len(clean_body_237) > 140 else '')
@@ -197,7 +279,7 @@ def main():
         if m_type:
             content_type = m_type.group(1).strip()
 
-        m_body_split = re.search(r'충실\s*번역\s*\n', raw_body)
+        m_body_split = re.search(r'(?:충실\s*)?번역\s*\n', raw_body)
         if m_body_split:
             main_content = raw_body[m_body_split.end():]
         else:
@@ -207,12 +289,15 @@ def main():
             if m_type:
                 main_content = main_content.replace(m_type.group(0), '')
 
-        m_notes = re.search(r'\n(번역\s*메모[^\n]*\n|참고[^\n]*\n|편집자\s*(?:신앙\s*)?고백[^\n]*\n|편집자의\s*종교적\s*해석[^\n]*\n|사실\s*관계\s*주의[^\n]*\n)', main_content)
+        m_notes = re.search(r'\n(번역\s*(?:·\s*제작)?\s*메모[^\n]*\n|참고[^\n]*\n|편집자\s*(?:신앙\s*)?고백[^\n]*\n|편집자의\s*종교적\s*해석[^\n]*\n|사실\s*관계\s*주의[^\n]*\n)', main_content)
         if m_notes:
             body_text = main_content[:m_notes.start()].strip()
             notes_text = main_content[m_notes.start():].strip()
         else:
             body_text = main_content.strip()
+
+        body_text = normalize_korean_paragraphs(body_text)
+        notes_text = normalize_korean_paragraphs(notes_text)
 
         clean_body_for_summary = re.sub(r'\s+', ' ', body_text)
         summary_snippet = clean_body_for_summary[:140] + ('...' if len(clean_body_for_summary) > 140 else '')

@@ -1437,6 +1437,8 @@ body::before {
   color: #f3f4f6;
   white-space: pre-line;
   letter-spacing: -0.2px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .commentary-section {
@@ -1456,9 +1458,11 @@ body::before {
 
 .commentary-body {
   font-size: 0.85rem;
-  line-height: 1.7;
+  line-height: 1.75;
   color: #d1d5db;
   white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 
