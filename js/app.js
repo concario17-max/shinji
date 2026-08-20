@@ -2,11 +2,12 @@
  * Application Logic for Shinji Takahashi Archive Website
  * Supports:
  * 1. 📖 다카하시 신지 이야기 (237편 완역 & 즉시 몰입형 풀스크린 만화 뷰어 & 슬라이드 번역 전문)
- * 2. 🎬 강연 동영상 아카이브 (47편 노래/DVD/CD & 타임스탬프 목차)
- * 3. 🔍 스마트 정밀 검색 & Empty State
- * 4. 🔗 URL 해시 딥링크 (#story-001, #video-01)
- * 5. 📖 본문 글자 크기 조절 (A- / A+), 전문 복사, 링크 공유
- * 6. 🚀 Scroll-to-Top 플로팅 버튼
+ * 2. ⛶ 브라우저 전체화면(F11) 원클릭 토글 (단축키: F / 더블클릭)
+ * 3. 🎬 강연 동영상 아카이브 (47편 노래/DVD/CD & 타임스탬프 목차)
+ * 4. 🔍 스마트 정밀 검색 & Empty State
+ * 5. 🔗 URL 해시 딥링크 (#story-001, #video-01)
+ * 6. 📖 본문 글자 크기 조절 (A- / A+), 전문 복사, 링크 공유
+ * 7. 🚀 Scroll-to-Top 플로팅 버튼
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -68,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const storyMangaPanel = document.getElementById('storyMangaPanel');
   const storyPrevBtn = document.getElementById('storyPrevBtn');
   const storyNextBtn = document.getElementById('storyNextBtn');
+  const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
 
   // DOM Elements - Drawer & Translation
   const btnToggleTranslation = document.getElementById('btnToggleTranslation');
@@ -161,6 +163,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    // Native Browser Fullscreen (F11) Toggle
+    if (btnToggleFullscreen) {
+      btnToggleFullscreen.addEventListener('click', toggleFullscreen);
+    }
+    if (storyModalImage) {
+      storyModalImage.addEventListener('dblclick', toggleFullscreen);
+    }
+    document.addEventListener('fullscreenchange', updateFullscreenUI);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+
     // Fullscreen Story Viewer Drawer Toggle
     if (btnToggleTranslation) {
       btnToggleTranslation.addEventListener('click', toggleTranslationDrawer);
@@ -190,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Story Modal Close
     storyModalCloseBtn.addEventListener('click', closeStoryModal);
     storyMangaPanel.addEventListener('click', (e) => {
-      // If user clicked the canvas background (outside the comic image), close modal
+      // If user clicked canvas background (outside image), close modal
       if (e.target === storyMangaPanel || e.target.classList.contains('comic-image-wrapper')) {
         closeStoryModal();
       }
@@ -231,6 +243,9 @@ document.addEventListener('DOMContentLoaded', () => {
           navigateStory(1);
         } else if (e.key === 't' || e.key === 'T' || e.key === 'ㅅ') {
           toggleTranslationDrawer();
+        } else if (e.key === 'f' || e.key === 'F' || e.key === 'ㄹ') {
+          e.preventDefault();
+          toggleFullscreen();
         }
       }
     });
@@ -240,6 +255,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Hash change listener (Back/Forward browser buttons)
     window.addEventListener('hashchange', checkUrlHash);
+  }
+
+  // Native Fullscreen API Handler (F11 equivalent)
+  function toggleFullscreen() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    }
+  }
+
+  function updateFullscreenUI() {
+    const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    if (btnToggleFullscreen) {
+      btnToggleFullscreen.classList.toggle('is-fullscreen', isFs);
+      btnToggleFullscreen.title = isFs ? '전체화면 해제 (단축키: F)' : '브라우저 전체화면 전환 (단축키: F)';
+      const fsIconEnter = btnToggleFullscreen.querySelector('.fs-icon-enter');
+      const fsIconExit = btnToggleFullscreen.querySelector('.fs-icon-exit');
+      const fsText = btnToggleFullscreen.querySelector('.fs-text');
+      if (fsIconEnter) fsIconEnter.style.display = isFs ? 'none' : 'inline-block';
+      if (fsIconExit) fsIconExit.style.display = isFs ? 'inline-block' : 'none';
+      if (fsText) fsText.textContent = isFs ? '화면 해제' : '전체화면';
+    }
   }
 
   // Switch between Story Mode and Video Mode
@@ -252,10 +303,10 @@ document.addEventListener('DOMContentLoaded', () => {
       videosSection.style.display = 'none';
       
       heroTitle.textContent = '다카하시 신지 이야기 · 237편 완역';
-      heroSubtitle.textContent = '5개 장으로 완성된 신지의 일대기와 영적 진리, 그리고 237편 요약 만화 카드와 충실 번역 전문을 제공합니다.';
+      heroSubtitle.textContent = '5개 장으로 완성된 신지의 일대기와 영적 진리, 그리고 237편 요약 만화 카드와 번역 전문을 제공합니다.';
       searchInput.placeholder = '이야기 번호, 제목, 키워드 검색...';
       subStat1.textContent = '5개 장 체계';
-      subStat2.textContent = '237편 만화 요약 & 완역 전문 1:1';
+      subStat2.textContent = '237편 만화 요약 & 번역 전문 1:1';
       totalCountEl.textContent = activeStories.length;
     } else {
       modeVideoBtn.classList.add('active');
@@ -536,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let fullTextToCopy = `${item.number} ${item.title}\n`;
     if (item.origTitle) fullTextToCopy += `(원제: ${item.origTitle})\n`;
-    fullTextToCopy += `\n[한국어 충실 번역 본문]\n${item.body}\n`;
+    fullTextToCopy += `\n[한국어 번역 본문]\n${item.body}\n`;
     if (item.notes && item.notes.trim()) {
       fullTextToCopy += `\n[해설 및 번역 메모]\n${item.notes}\n`;
     }

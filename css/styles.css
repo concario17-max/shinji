@@ -1097,8 +1097,45 @@ body::before {
 .viewer-actions-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
+}
+
+.viewer-fullscreen-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--card-border);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition-fast);
+}
+
+.viewer-fullscreen-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.viewer-fullscreen-btn.is-fullscreen {
+  background: rgba(6, 182, 212, 0.2);
+  border-color: var(--accent-cyan);
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+}
+
+@media (max-width: 600px) {
+  .viewer-fullscreen-btn .fs-text {
+    display: none;
+  }
+  .viewer-fullscreen-btn {
+    padding: 6px 10px;
+  }
 }
 
 .viewer-toggle-btn {
