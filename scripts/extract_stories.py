@@ -1,6 +1,6 @@
 """
 다카하시 신지 이야기(001~237) PDF 자동 파서 및 데이터 생성 스크립트
-236번(종합 서술) 및 237번(마지막 후기) 분리 지원
+WebP 고화질 및 초경량 썸네일 경로 지원
 """
 
 import os
@@ -14,25 +14,15 @@ def main():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     src_images_dir = os.path.join(base_dir, '새 폴더')
     dst_images_dir = os.path.join(base_dir, 'images', 'stories')
+    dst_thumbs_dir = os.path.join(dst_images_dir, 'thumbs')
     pdf_path = os.path.join(src_images_dir, '다카하시_신지_이야기_001-236_한국어_충실번역_번호별_새페이지_최종본.pdf')
     out_js_path = os.path.join(base_dir, 'js', 'stories-data.js')
 
     os.makedirs(dst_images_dir, exist_ok=True)
+    os.makedirs(dst_thumbs_dir, exist_ok=True)
     os.makedirs(os.path.join(base_dir, 'js'), exist_ok=True)
 
-    # 1. Copy images
-    copied = 0
-    if os.path.exists(src_images_dir):
-        for f in os.listdir(src_images_dir):
-            if f.lower().endswith('.png'):
-                s = os.path.join(src_images_dir, f)
-                d = os.path.join(dst_images_dir, f)
-                if not os.path.exists(d) or os.path.getsize(s) != os.path.getsize(d):
-                    shutil.copy2(s, d)
-                    copied += 1
-    print(f"Copied {copied} images to {dst_images_dir}")
-
-    # 2. Parse PDF
+    # Parse PDF
     if not os.path.exists(pdf_path):
         print(f"PDF not found at {pdf_path}")
         return
@@ -113,7 +103,6 @@ def main():
 
         # Special Handling for Item 236 (Split into 236 and 237)
         if item_id == 236:
-            # Check for '후기' in body
             m_hooki = re.search(r'\n후기\s*\n', raw_body)
             if m_hooki:
                 raw_236 = raw_body[:m_hooki.start()].strip()
@@ -122,11 +111,9 @@ def main():
                 raw_236 = raw_body
                 raw_237 = ""
 
-            # Story 236: 신지 선생에 대한 종합 서술
             orig_title_236 = '「高橋信次師物語」 真のメシヤの記録 236　八起正法先生編'
             content_type_236 = '웹 편집자의 종합 서술 및 신앙적 해석'
-            
-            # Extract notes/caution in 236
+
             m_notes_236 = re.search(r'\n(사실\s*관계\s*주의[^\n]*\n|참고[^\n]*\n|번역\s*메모[^\n]*\n)', raw_236)
             if m_notes_236:
                 body_236 = raw_236[:m_notes_236.start()].strip()
@@ -134,16 +121,16 @@ def main():
             else:
                 body_236 = raw_236.strip()
                 notes_236 = ""
-            
-            # Clean 원제/내용성격 if inside body
+
             body_236 = re.sub(r'원제:[^\n]+\n', '', body_236).strip()
             body_236 = re.sub(r'내용\s*성격:[^\n]+\n', '', body_236).strip()
 
             clean_body_236 = re.sub(r'\s+', ' ', body_236)
             summary_236 = clean_body_236[:140] + ('...' if len(clean_body_236) > 140 else '')
 
-            img_236 = 'images/stories/236.png'
-            has_img_236 = os.path.exists(os.path.join(dst_images_dir, '236.png'))
+            img_236 = 'images/stories/236.webp'
+            thumb_236 = 'images/stories/thumbs/236.webp'
+            has_img_236 = os.path.exists(os.path.join(dst_images_dir, '236.webp'))
 
             stories.append({
                 'id': 236,
@@ -158,10 +145,10 @@ def main():
                 'body': body_236,
                 'notes': notes_236,
                 'image': img_236,
+                'thumb': thumb_236,
                 'hasImage': has_img_236
             })
 
-            # Story 237: [후기] 자료를 모아 '신지 사' 이야기로
             orig_title_237 = '後記 - 資料を集めて「信次師」物語へ'
             content_type_237 = '웹 편집자의 집필 회고 및 감사 맺음말'
 
@@ -176,8 +163,9 @@ def main():
             clean_body_237 = re.sub(r'\s+', ' ', body_237)
             summary_237 = clean_body_237[:140] + ('...' if len(clean_body_237) > 140 else '')
 
-            img_237 = 'images/stories/237.png'
-            has_img_237 = os.path.exists(os.path.join(dst_images_dir, '237.png'))
+            img_237 = 'images/stories/237.webp'
+            thumb_237 = 'images/stories/thumbs/237.webp'
+            has_img_237 = os.path.exists(os.path.join(dst_images_dir, '237.webp'))
 
             stories.append({
                 'id': 237,
@@ -192,6 +180,7 @@ def main():
                 'body': body_237,
                 'notes': notes_237,
                 'image': img_237,
+                'thumb': thumb_237,
                 'hasImage': has_img_237
             })
             continue
@@ -228,8 +217,8 @@ def main():
         clean_body_for_summary = re.sub(r'\s+', ' ', body_text)
         summary_snippet = clean_body_for_summary[:140] + ('...' if len(clean_body_for_summary) > 140 else '')
 
-        img_filename = f'{num_str}.png'
-        has_image = os.path.exists(os.path.join(dst_images_dir, img_filename))
+        webp_filename = f'{num_str}.webp'
+        has_image = os.path.exists(os.path.join(dst_images_dir, webp_filename))
 
         stories.append({
             'id': item_id,
@@ -243,11 +232,11 @@ def main():
             'summary': summary_snippet,
             'body': body_text,
             'notes': notes_text,
-            'image': f'images/stories/{img_filename}',
+            'image': f'images/stories/{webp_filename}',
+            'thumb': f'images/stories/thumbs/{webp_filename}',
             'hasImage': has_image
         })
 
-    # Sort stories by id just in case
     stories.sort(key=lambda s: s['id'])
 
     js_content = f'''/**

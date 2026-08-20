@@ -301,9 +301,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let thumbHtml = '';
     if (item.hasImage) {
+      const thumbSrc = item.thumb || item.image;
       thumbHtml = `
         <div class="story-card-thumb-wrap">
-          <img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'story-card-text-cover\\'><span class=\\'text-cover-num\\'>${item.number}</span><p class=\\'text-cover-title\\'>${item.title}</p></div>'">
+          <img src="${thumbSrc}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML='<div class=\\'story-card-text-cover\\'><span class=\\'text-cover-num\\'>${item.number}</span><p class=\\'text-cover-title\\'>${item.title}</p></div>'">
           <div class="story-card-badges">
             <span class="story-num-pill">${item.number}</span>
             <span class="story-chap-pill chap-${item.chapter}">${chapMeta.name}</span>
