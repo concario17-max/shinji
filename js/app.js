@@ -208,6 +208,36 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // Mobile Touch Swipe Navigation (좌우 터치 스와이프로 만화 넘기기)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    storyMangaPanel.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    storyMangaPanel.addEventListener('touchend', (e) => {
+      if (e.changedTouches.length === 1) {
+        touchEndX = e.changedTouches[0].clientX;
+        touchEndY = e.changedTouches[0].clientY;
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+
+        if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY) * 1.4) {
+          if (diffX < 0) {
+            navigateStory(1);
+          } else {
+            navigateStory(-1);
+          }
+        }
+      }
+    }, { passive: true });
+
     // Video Modal Close
     videoModalCloseBtn.addEventListener('click', closeVideoModal);
     videoModalBackdrop.addEventListener('click', (e) => {

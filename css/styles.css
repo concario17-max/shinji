@@ -1331,9 +1331,50 @@ body::before {
     padding-right: 0;
   }
   .comic-image-wrapper img {
-    max-height: calc(100vh - 110px);
+    max-height: calc(100vh - 80px);
     max-width: 98vw;
   }
+}
+
+@media (max-width: 480px) {
+  .viewer-top-bar {
+    padding: 0 10px;
+    height: 48px;
+  }
+  .viewer-meta-left {
+    gap: 5px;
+  }
+  .viewer-title {
+    max-width: 28vw;
+    font-size: 0.82rem;
+  }
+  .viewer-counter-pill {
+    display: none;
+  }
+  .viewer-fullscreen-btn, .viewer-toggle-btn {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+  }
+  .viewer-close-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
+  }
+  .viewer-comic-canvas {
+    padding: 4px 2px;
+  }
+  .comic-image-wrapper img {
+    max-height: calc(100vh - 60px);
+    max-width: 99vw;
+    border-radius: 4px;
+  }
+  .viewer-nav-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(15, 8, 26, 0.6);
+  }
+  .viewer-nav-btn.prev-btn { left: 4px; }
+  .viewer-nav-btn.next-btn { right: 4px; }
 }
 
 .drawer-header {
