@@ -3,31 +3,43 @@
  * 
  * Features:
  * 1. 📖 다카하시 신지 이야기 (237편 완역 & 3D 럭셔리 카드 & 몰입형 풀스크린 뷰어)
- * 2. 🎨 뷰어 테마 3종 토글 (시네마 다크 / OLED 딥블랙 / 세피아 웜)
- * 3. ⭐ 나만의 즐겨찾기(북마크) 보관함 시스템 (LocalStorage 연동)
- * 4. 🔖 "지난번에 읽던 이야기 이어보기" 배너 (자동 기억)
- * 5. ⚡ 초고속 점프 커맨드 팔레트 (Ctrl + K / Cmd + K)
- * 6. ⛶ 브라우저 전체화면(F11) 토글 (단축키: F / 더블클릭)
- * 7. 📱 모바일 터치 스와이프 제스처 네비게이션
- * 8. 🎬 강연 동영상 아카이브 (47편 노래/DVD/CD & 타임스탬프 목차)
- * 9. 🔍 스마트 정밀 검색 & URL 해시 딥링크 (#story-001, #video-01)
+ * 2. 📚 정법 도서관 (다카하시 신지 강연집 10강 + 최후 유고 신·부활 전편 완역)
+ *    - 2열 스플릿 프리미엄 전자책 리더 (TOC 사이드바 + Noto Serif 명조 리더)
+ *    - 3가지 독서 테마 (시네마 다크 / OLED 트루블랙 / 세피아 페이퍼)
+ *    - 읽기 진행률 프로그레스 바 & 마지막 읽은 위치 자동 저장
+ * 3. 🎬 강연 동영상 아카이브 (47편 노래/DVD/CD & 타임스탬프 목차)
+ * 4. ⚡ 초고속 점프 커맨드 팔레트 (Ctrl + K / Cmd + K) - 이야기/서적/영상 통합 검색
+ * 5. 🔍 URL 해시 딥링크 (#story-001, #book-lectures-1, #book-shin_buhwal-1, #video-01)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Global State
-  let currentMode = 'story'; // 'story' | 'video'
+  // ==========================================
+  // 1. Global State
+  // ==========================================
+  let currentMode = 'story'; // 'story' | 'book' | 'video'
   let storyChapter = 'all';  // 'all' | '1' | '2' | '3' | '4' | '5' | 'bookmark'
   let videoCategory = 'all'; // 'all' | '노래' | 'DVD' | 'CD'
+  let currentBookId = 'lectures'; // 'lectures' | 'shin_buhwal'
   let searchQuery = '';
   
   let activeStories = [...(typeof STORIES_DATA !== 'undefined' ? STORIES_DATA : [])];
   let activeLectures = [...(typeof LECTURE_DATA !== 'undefined' ? LECTURE_DATA : [])];
+  let activeBooks = [...(typeof BOOKS_DATA !== 'undefined' ? BOOKS_DATA : [])];
 
-  let currentStoryIndex = 0; // index in activeStories
+  // Story Viewer State
+  let currentStoryIndex = 0;
   let isTranslationDrawerOpen = false;
-  let currentFontSizePercent = 100; // 85 | 100 | 115 | 130
+  let currentFontSizePercent = 100;
   
-  // Bookmarks & Preferences (LocalStorage)
+  // Book Reader State
+  let currentReadingBook = null;
+  let currentReadingChapterIndex = 0;
+  let isBookTocOpen = true;
+  let bookReaderTheme = localStorage.getItem('shinji_book_theme') || 'cinema';
+  let bookFontSizePercent = parseInt(localStorage.getItem('shinji_book_font') || '100', 10);
+  let bookmarkedBookChapters = JSON.parse(localStorage.getItem('shinji_book_bookmarks') || '[]');
+
+  // Bookmarks & Preferences
   let bookmarkedIds = JSON.parse(localStorage.getItem('shinji_bookmarks') || '[]');
   let currentViewerTheme = localStorage.getItem('shinji_viewer_theme') || 'cinema';
 
@@ -39,10 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let isStoryLoading = false;
   let isVideoLoading = false;
 
-  // DOM Elements - Mode Nav & Global
+  // ==========================================
+  // 2. DOM Elements
+  // ==========================================
+  
+  // Mode Navigation & Global Headers
   const modeStoryBtn = document.getElementById('modeStoryBtn');
+  const modeBookBtn = document.getElementById('modeBookBtn');
   const modeVideoBtn = document.getElementById('modeVideoBtn');
   const storiesSection = document.getElementById('storiesSection');
+  const booksSection = document.getElementById('booksSection');
   const videosSection = document.getElementById('videosSection');
   const searchInput = document.getElementById('searchInput');
   const searchClearBtn = document.getElementById('searchClearBtn');
@@ -60,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const continueStoryTitle = document.getElementById('continueStoryTitle');
   const btnContinueStory = document.getElementById('btnContinueStory');
 
-  // DOM Elements - Stories
+  // Story Elements
   const chapFilterBtns = document.querySelectorAll('.chap-filter-btn');
   const bookmarkCountPill = document.getElementById('bookmarkCountPill');
   const chapterInfoBanner = document.getElementById('chapterInfoBanner');
@@ -71,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const storyGrid = document.getElementById('storyGrid');
   const storyLoadingTrigger = document.getElementById('storyLoadingTrigger');
 
-  // DOM Elements - Fullscreen Story Viewer
+  // Story Viewer Modal
   const storyModalBackdrop = document.getElementById('storyModalBackdrop');
   const storyModalCloseBtn = document.getElementById('storyModalCloseBtn');
   const storyModalChapBadge = document.getElementById('storyModalChapBadge');
@@ -88,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnThemeSelector = document.getElementById('btnThemeSelector');
   const themeLabel = document.getElementById('themeLabel');
 
-  // DOM Elements - Drawer & Translation
+  // Story Drawer
   const btnToggleTranslation = document.getElementById('btnToggleTranslation');
   const btnCloseDrawer = document.getElementById('btnCloseDrawer');
   const metaOrigTitle = document.getElementById('metaOrigTitle');
@@ -97,22 +115,67 @@ document.addEventListener('DOMContentLoaded', () => {
   const storyModalBodyText = document.getElementById('storyModalBodyText');
   const storyCommentarySection = document.getElementById('storyCommentarySection');
   const storyModalNotes = document.getElementById('storyModalNotes');
-
-  // DOM Elements - Reader Toolbar
   const btnFontDecrease = document.getElementById('btnFontDecrease');
   const btnFontIncrease = document.getElementById('btnFontIncrease');
   const fontIndicator = document.getElementById('fontIndicator');
   const btnCopyStoryText = document.getElementById('btnCopyStoryText');
   const btnShareStory = document.getElementById('btnShareStory');
 
-  // DOM Elements - Command Palette
+  // Books Section Elements
+  const bookNavTabs = document.getElementById('bookNavTabs');
+  const bookSpotlightCard = document.getElementById('bookSpotlightCard');
+  const bookChaptersGridTitle = document.getElementById('bookChaptersGridTitle');
+  const bookChaptersCountTag = document.getElementById('bookChaptersCountTag');
+  const bookChaptersGrid = document.getElementById('bookChaptersGrid');
+
+  // E-Book Reader Modal Elements
+  const bookReaderModal = document.getElementById('bookReaderModal');
+  const bookReadingProgressBar = document.getElementById('bookReadingProgressBar');
+  const btnToggleBookToc = document.getElementById('btnToggleBookToc');
+  const readerBookBadge = document.getElementById('readerBookBadge');
+  const readerChapterNumber = document.getElementById('readerChapterNumber');
+  const readerChapterTitle = document.getElementById('readerChapterTitle');
+  const btnBookmarkBookChapter = document.getElementById('btnBookmarkBookChapter');
+  const btnBookThemeSelector = document.getElementById('btnBookThemeSelector');
+  const bookThemeLabel = document.getElementById('bookThemeLabel');
+  const btnBookFontDecrease = document.getElementById('btnBookFontDecrease');
+  const bookFontIndicator = document.getElementById('bookFontIndicator');
+  const btnBookFontIncrease = document.getElementById('btnBookFontIncrease');
+  const btnToggleBookFullscreen = document.getElementById('btnToggleBookFullscreen');
+  const btnCopyBookText = document.getElementById('btnCopyBookText');
+  const bookReaderCloseBtn = document.getElementById('bookReaderCloseBtn');
+  const bookReaderMainStage = document.getElementById('bookReaderMainStage');
+  const bookTocSidebar = document.getElementById('bookTocSidebar');
+  const tocSidebarBadge = document.getElementById('tocSidebarBadge');
+  const tocSidebarBookTitle = document.getElementById('tocSidebarBookTitle');
+  const btnCloseTocMobile = document.getElementById('btnCloseTocMobile');
+  const bookTocItemsList = document.getElementById('bookTocItemsList');
+  const bookContentCanvas = document.getElementById('bookContentCanvas');
+  const artChapterNumber = document.getElementById('artChapterNumber');
+  const artPageRange = document.getElementById('artPageRange');
+  const artReadingTime = document.getElementById('artReadingTime');
+  const artChapterTitle = document.getElementById('artChapterTitle');
+  const artOrigTitle = document.getElementById('artOrigTitle');
+  const artTagsBar = document.getElementById('artTagsBar');
+  const artGuideBox = document.getElementById('artGuideBox');
+  const artGuideText = document.getElementById('artGuideText');
+  const artSummaryBox = document.getElementById('artSummaryBox');
+  const artSummaryText = document.getElementById('artSummaryText');
+  const artParagraphsContainer = document.getElementById('artParagraphsContainer');
+  const btnBookPrevChapter = document.getElementById('btnBookPrevChapter');
+  const btnBookPrevTitle = document.getElementById('btnBookPrevTitle');
+  const btnBookOpenToc = document.getElementById('btnBookOpenToc');
+  const btnBookNextChapter = document.getElementById('btnBookNextChapter');
+  const btnBookNextTitle = document.getElementById('btnBookNextTitle');
+
+  // Command Palette Elements
   const cmdPaletteModal = document.getElementById('cmdPaletteModal');
   const cmdPaletteInput = document.getElementById('cmdPaletteInput');
   const cmdResultsList = document.getElementById('cmdResultsList');
   let cmdActiveIndex = 0;
   let cmdFilteredItems = [];
 
-  // DOM Elements - Videos
+  // Video Section Elements
   const filterBtns = document.querySelectorAll('.filter-btn');
   const videoGrid = document.getElementById('videoGrid');
   const videoLoadingTrigger = document.getElementById('videoLoadingTrigger');
@@ -124,22 +187,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const timestampList = document.getElementById('timestampList');
   const transcriptText = document.getElementById('transcriptText');
 
-  // Initialization
+  // ==========================================
+  // 3. Initialization
+  // ==========================================
   init();
 
   function init() {
     applyViewerTheme(currentViewerTheme);
+    applyBookReaderTheme(bookReaderTheme);
+    applyBookFontSize(bookFontSizePercent);
     updateBookmarkCountPill();
     checkContinueReading();
     setupEventListeners();
     updateStoriesData();
+    renderBooksSection();
     updateVideosData();
     checkUrlHash();
   }
 
   function setupEventListeners() {
-    // Mode Switcher (Stories vs Videos)
+    // Mode Switcher Buttons
     modeStoryBtn.addEventListener('click', () => switchMode('story'));
+    if (modeBookBtn) modeBookBtn.addEventListener('click', () => switchMode('book'));
     modeVideoBtn.addEventListener('click', () => switchMode('video'));
 
     // Search Input
@@ -150,6 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (currentMode === 'story') {
         updateStoriesData();
+      } else if (currentMode === 'book') {
+        renderBooksSection();
       } else {
         updateVideosData();
       }
@@ -163,6 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.focus();
         if (currentMode === 'story') {
           updateStoriesData();
+        } else if (currentMode === 'book') {
+          renderBooksSection();
         } else {
           updateVideosData();
         }
@@ -174,13 +247,23 @@ document.addEventListener('DOMContentLoaded', () => {
       btnOpenCommandPalette.addEventListener('click', openCommandPalette);
     }
 
-    // Continue Reading / Watching Button (Mode-Aware)
+    // Continue Reading Banner
     if (btnContinueStory) {
       btnContinueStory.addEventListener('click', () => {
         if (currentMode === 'story') {
           const lastId = parseInt(localStorage.getItem('shinji_last_story'), 10);
           const story = STORIES_DATA.find(s => s.id === lastId);
           if (story) openStoryModal(story);
+        } else if (currentMode === 'book') {
+          const lastBookJson = localStorage.getItem('shinji_last_read_book');
+          if (lastBookJson) {
+            try {
+              const lastInfo = JSON.parse(lastBookJson);
+              openBookReader(lastInfo.bookId, lastInfo.chapterIndex);
+            } catch (err) {}
+          } else {
+            openBookReader('lectures', 0);
+          }
         } else {
           const lastVidId = parseInt(localStorage.getItem('shinji_last_video'), 10);
           const video = LECTURE_DATA.find(v => v.id === lastVidId);
@@ -210,569 +293,606 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Fullscreen Toggle
-    if (btnToggleFullscreen) {
-      btnToggleFullscreen.addEventListener('click', toggleFullscreen);
-    }
-    if (storyModalImage) {
-      storyModalImage.addEventListener('dblclick', toggleFullscreen);
-    }
-    document.addEventListener('fullscreenchange', updateFullscreenUI);
-    document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+    // Story Viewer Events
+    if (storyModalCloseBtn) storyModalCloseBtn.addEventListener('click', closeStoryModal);
+    if (storyPrevBtn) storyPrevBtn.addEventListener('click', () => navigateStory(-1));
+    if (storyNextBtn) storyNextBtn.addEventListener('click', () => navigateStory(1));
+    if (btnBookmarkStory) btnBookmarkStory.addEventListener('click', toggleCurrentStoryBookmark);
+    if (btnThemeSelector) btnThemeSelector.addEventListener('click', cycleViewerTheme);
+    if (btnToggleFullscreen) btnToggleFullscreen.addEventListener('click', toggleFullscreen);
+    if (storyModalImage) storyModalImage.addEventListener('dblclick', toggleFullscreen);
+    if (btnToggleTranslation) btnToggleTranslation.addEventListener('click', toggleTranslationDrawer);
+    if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', closeTranslationDrawer);
+    if (btnFontDecrease) btnFontDecrease.addEventListener('click', () => adjustFontSize(-15));
+    if (btnFontIncrease) btnFontIncrease.addEventListener('click', () => adjustFontSize(15));
+    if (btnCopyStoryText) btnCopyStoryText.addEventListener('click', copyCurrentStoryText);
+    if (btnShareStory) btnShareStory.addEventListener('click', shareCurrentStoryLink);
 
-    // Bookmark Toggle inside Story Viewer
-    if (btnBookmarkStory) {
-      btnBookmarkStory.addEventListener('click', toggleCurrentStoryBookmark);
-    }
-
-    // Theme Switcher inside Story Viewer
-    if (btnThemeSelector) {
-      btnThemeSelector.addEventListener('click', cycleViewerTheme);
-    }
-
-    // Fullscreen Story Viewer Drawer Toggle
-    if (btnToggleTranslation) {
-      btnToggleTranslation.addEventListener('click', toggleTranslationDrawer);
-    }
-    if (btnCloseDrawer) {
-      btnCloseDrawer.addEventListener('click', () => closeTranslationDrawer());
-    }
-
-    // Reader Toolbar Events
-    if (btnFontDecrease) {
-      btnFontDecrease.addEventListener('click', () => adjustFontSize(-15));
-    }
-    if (btnFontIncrease) {
-      btnFontIncrease.addEventListener('click', () => adjustFontSize(15));
-    }
-    if (btnCopyStoryText) {
-      btnCopyStoryText.addEventListener('click', copyCurrentStoryText);
-    }
-    if (btnShareStory) {
-      btnShareStory.addEventListener('click', shareCurrentStoryLink);
-    }
-
-    // Story Prev / Next
-    storyPrevBtn.addEventListener('click', () => navigateStory(-1));
-    storyNextBtn.addEventListener('click', () => navigateStory(1));
-
-    // Story Modal Close
-    storyModalCloseBtn.addEventListener('click', closeStoryModal);
-    storyMangaPanel.addEventListener('click', (e) => {
-      if (e.target === storyMangaPanel || e.target.classList.contains('comic-image-wrapper')) {
-        closeStoryModal();
-      }
+    // E-Book Reader Modal Events
+    if (bookReaderCloseBtn) bookReaderCloseBtn.addEventListener('click', closeBookReader);
+    if (btnToggleBookToc) btnToggleBookToc.addEventListener('click', toggleBookToc);
+    if (btnCloseTocMobile) btnCloseTocMobile.addEventListener('click', () => {
+      if (bookTocSidebar) bookTocSidebar.classList.remove('toc-open');
     });
+    if (btnBookOpenToc) btnBookOpenToc.addEventListener('click', toggleBookToc);
+    if (btnBookPrevChapter) btnBookPrevChapter.addEventListener('click', () => navigateBookChapter(-1));
+    if (btnBookNextChapter) btnBookNextChapter.addEventListener('click', () => navigateBookChapter(1));
+    if (btnBookmarkBookChapter) btnBookmarkBookChapter.addEventListener('click', toggleCurrentBookBookmark);
+    if (btnBookThemeSelector) btnBookThemeSelector.addEventListener('click', cycleBookTheme);
+    if (btnBookFontDecrease) btnBookFontDecrease.addEventListener('click', () => adjustBookFontSize(-10));
+    if (btnBookFontIncrease) btnBookFontIncrease.addEventListener('click', () => adjustBookFontSize(10));
+    if (btnToggleBookFullscreen) btnToggleBookFullscreen.addEventListener('click', toggleBookFullscreen);
+    if (btnCopyBookText) btnCopyBookText.addEventListener('click', copyCurrentBookText);
 
-    // Mobile Touch Swipe Navigation
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
+    // Reading Progress Listener on E-Book Content Canvas
+    if (bookContentCanvas) {
+      bookContentCanvas.addEventListener('scroll', updateReadingProgress);
+    }
 
-    storyMangaPanel.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-
-    storyMangaPanel.addEventListener('touchend', (e) => {
-      if (e.changedTouches.length === 1) {
-        touchEndX = e.changedTouches[0].clientX;
-        touchEndY = e.changedTouches[0].clientY;
-        const diffX = touchEndX - touchStartX;
-        const diffY = touchEndY - touchStartY;
-
-        if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY) * 1.4) {
-          if (diffX < 0) {
-            navigateStory(1);
-          } else {
-            navigateStory(-1);
-          }
-        }
-      }
-    }, { passive: true });
-
-    // Video Modal Close
-    videoModalCloseBtn.addEventListener('click', closeVideoModal);
-    videoModalBackdrop.addEventListener('click', (e) => {
-      if (e.target === videoModalBackdrop) closeVideoModal();
-    });
-
-    // Scroll to Top Floating Button
-    if (scrollTopBtn) {
-      window.addEventListener('scroll', () => {
-        if (window.scrollY > 400) {
-          scrollTopBtn.classList.add('visible');
-        } else {
-          scrollTopBtn.classList.remove('visible');
-        }
+    // Video Modal Events
+    if (videoModalCloseBtn) videoModalCloseBtn.addEventListener('click', closeVideoModal);
+    if (videoModalBackdrop) {
+      videoModalBackdrop.addEventListener('click', (e) => {
+        if (e.target === videoModalBackdrop) closeVideoModal();
       });
+    }
+
+    // Global Keydown Shortcut Handler
+    document.addEventListener('keydown', handleGlobalKeydown);
+
+    // Scroll-to-Top Button & Infinite Scroll
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 400) {
+        scrollTopBtn.classList.add('visible');
+      } else {
+        scrollTopBtn.classList.remove('visible');
+      }
+      handleScroll();
+    });
+
+    if (scrollTopBtn) {
       scrollTopBtn.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }
-
-    // Global Keyboard Shortcuts
-    document.addEventListener('keydown', (e) => {
-      // Command Palette (Ctrl + K or Cmd + K)
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
-        e.preventDefault();
-        openCommandPalette();
-        return;
-      }
-
-      // Command Palette active state
-      if (cmdPaletteModal && cmdPaletteModal.classList.contains('active')) {
-        if (e.key === 'Escape') {
-          closeCommandPalette();
-        } else if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          moveCmdHighlight(1);
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          moveCmdHighlight(-1);
-        } else if (e.key === 'Enter') {
-          e.preventDefault();
-          selectCmdItem();
-        }
-        return;
-      }
-
-      if (e.key === 'Escape') {
-        if (storyModalBackdrop.classList.contains('active')) {
-          closeStoryModal();
-        } else if (videoModalBackdrop.classList.contains('active')) {
-          closeVideoModal();
-        }
-      } else if (storyModalBackdrop.classList.contains('active')) {
-        if (e.key === 'ArrowLeft') {
-          navigateStory(-1);
-        } else if (e.key === 'ArrowRight') {
-          navigateStory(1);
-        } else if (e.key === 't' || e.key === 'T' || e.key === 'ㅅ') {
-          toggleTranslationDrawer();
-        } else if (e.key === 'b' || e.key === 'B' || e.key === 'ㅠ') {
-          toggleCurrentStoryBookmark();
-        } else if (e.key === 'f' || e.key === 'F' || e.key === 'ㄹ' || e.key === 'F11') {
-          e.preventDefault();
-          toggleFullscreen();
-        }
-      }
-    });
-
-    // Command Palette Input Events
-    if (cmdPaletteInput) {
-      cmdPaletteInput.addEventListener('input', (e) => {
-        renderCmdResults(e.target.value.trim());
-      });
-    }
-
-    if (cmdPaletteModal) {
-      cmdPaletteModal.addEventListener('click', (e) => {
-        if (e.target === cmdPaletteModal) closeCommandPalette();
-      });
-    }
-
-    // Scroll Handler for Infinite Loading
-    window.addEventListener('scroll', handleScroll);
-
-    // Hash change listener (Back/Forward browser buttons)
-    window.addEventListener('hashchange', checkUrlHash);
   }
 
-  // ========================================================
-  // ⭐ BOOKMARK & FAVORITES SYSTEM
-  // ========================================================
-  function toggleCurrentStoryBookmark() {
-    const item = activeStories[currentStoryIndex];
-    if (!item) return;
-
-    const isBookmarked = bookmarkedIds.includes(item.id);
-    if (isBookmarked) {
-      bookmarkedIds = bookmarkedIds.filter(id => id !== item.id);
-      showToast('☆ 즐겨찾기 보관함에서 삭제되었습니다.');
-    } else {
-      bookmarkedIds.push(item.id);
-      showToast('⭐ 즐겨찾기 보관함에 저장되었습니다!');
-    }
-
-    localStorage.setItem('shinji_bookmarks', JSON.stringify(bookmarkedIds));
-    updateBookmarkButtonUI(item.id);
-    updateBookmarkCountPill();
-
-    if (storyChapter === 'bookmark') {
-      updateStoriesData();
-    }
-  }
-
-  function updateBookmarkButtonUI(storyId) {
-    if (!btnBookmarkStory) return;
-    const isBookmarked = bookmarkedIds.includes(storyId);
-    btnBookmarkStory.classList.toggle('bookmarked', isBookmarked);
-    const starIcon = btnBookmarkStory.querySelector('.btn-star-icon');
-    const label = btnBookmarkStory.querySelector('.btn-tool-label');
-    if (starIcon) starIcon.textContent = isBookmarked ? '★' : '☆';
-    if (label) label.textContent = isBookmarked ? '보관됨' : '보관';
-  }
-
-  function updateBookmarkCountPill() {
-    if (bookmarkCountPill) {
-      bookmarkCountPill.textContent = bookmarkedIds.length;
-    }
-  }
-
-  // Check and display "Continue Reading / Watching" (Mode-Aware)
-  function checkContinueReading() {
-    if (!continueReadingBanner) return;
-
-    if (currentMode === 'story') {
-      const lastId = parseInt(localStorage.getItem('shinji_last_story'), 10);
-      if (lastId) {
-        const story = STORIES_DATA.find(s => s.id === lastId);
-        if (story) {
-          const iconEl = continueReadingBanner.querySelector('.continue-icon');
-          const btnEl = continueReadingBanner.querySelector('.continue-btn');
-          if (iconEl) iconEl.textContent = '🔖';
-          if (btnEl) btnEl.textContent = '이어서 보기 ➔';
-          continueStoryTitle.textContent = `${story.number} ${story.title}`;
-          continueReadingBanner.style.display = 'inline-flex';
-          return;
-        }
-      }
-    } else if (currentMode === 'video') {
-      const lastVidId = parseInt(localStorage.getItem('shinji_last_video'), 10);
-      if (lastVidId) {
-        const video = LECTURE_DATA.find(v => v.id === lastVidId);
-        if (video) {
-          const iconEl = continueReadingBanner.querySelector('.continue-icon');
-          const btnEl = continueReadingBanner.querySelector('.continue-btn');
-          if (iconEl) iconEl.textContent = '🎬';
-          if (btnEl) btnEl.textContent = '이어서 시청 ➔';
-          continueStoryTitle.textContent = `${video.number} ${video.title}`;
-          continueReadingBanner.style.display = 'inline-flex';
-          return;
-        }
-      }
-    }
-
-    continueReadingBanner.style.display = 'none';
-  }
-
-  // ========================================================
-  // 🎨 VIEWER THEMES (Cinema, OLED Black, Sepia Paper)
-  // ========================================================
-  function cycleViewerTheme() {
-    const themes = ['cinema', 'oled', 'sepia'];
-    const nextIdx = (themes.indexOf(currentViewerTheme) + 1) % themes.length;
-    currentViewerTheme = themes[nextIdx];
-    localStorage.setItem('shinji_viewer_theme', currentViewerTheme);
-    applyViewerTheme(currentViewerTheme);
-
-    const names = { cinema: '시네마 다크', oled: 'OLED 블랙', sepia: '세피아 웜' };
-    showToast(`🎨 독서 테마: ${names[currentViewerTheme]}`);
-  }
-
-  function applyViewerTheme(theme) {
-    if (!storyModalBackdrop) return;
-    storyModalBackdrop.setAttribute('data-theme', theme);
-    if (themeLabel) {
-      const names = { cinema: '시네마', oled: 'OLED', sepia: '세피아' };
-      themeLabel.textContent = names[theme] || '테마';
-    }
-  }
-
-  // ========================================================
-  // ⚡ COMMAND PALETTE (Ctrl + K)
-  // ========================================================
-  function openCommandPalette() {
-    if (!cmdPaletteModal) return;
-    cmdPaletteModal.classList.add('active');
-    cmdPaletteInput.value = '';
-    cmdActiveIndex = 0;
-    renderCmdResults('');
-    setTimeout(() => cmdPaletteInput.focus(), 50);
-  }
-
-  function closeCommandPalette() {
-    if (!cmdPaletteModal) return;
-    cmdPaletteModal.classList.remove('active');
-  }
-
-  function renderCmdResults(query) {
-    const cleanQ = query.toLowerCase();
-    cmdResultsList.innerHTML = '';
-
-    if (!cleanQ) {
-      // Show first 15 stories by default
-      cmdFilteredItems = STORIES_DATA.slice(0, 15);
-    } else {
-      const numMatch = query.match(/^\d+$/);
-      if (numMatch) {
-        const targetId = parseInt(numMatch[0], 10);
-        cmdFilteredItems = STORIES_DATA.filter(s => s.id === targetId || s.num.includes(numMatch[0])).slice(0, 20);
-      } else {
-        cmdFilteredItems = STORIES_DATA.filter(s =>
-          s.title.toLowerCase().includes(cleanQ) ||
-          s.number.toLowerCase().includes(cleanQ) ||
-          s.summary.toLowerCase().includes(cleanQ)
-        ).slice(0, 20);
-      }
-    }
-
-    if (cmdFilteredItems.length === 0) {
-      cmdResultsList.innerHTML = `
-        <div style="padding: 24px; text-align: center; color: var(--text-dim); font-size: 0.86rem;">
-          일치하는 항목이 없습니다.
-        </div>
-      `;
-      return;
-    }
-
-    cmdActiveIndex = 0;
-    cmdFilteredItems.forEach((item, idx) => {
-      const el = document.createElement('div');
-      el.className = `cmd-item ${idx === 0 ? 'active' : ''}`;
-      el.innerHTML = `
-        <div class="cmd-item-left">
-          <span class="cmd-item-num">${item.number}</span>
-          <span class="cmd-item-title">${item.title}</span>
-        </div>
-        <span class="cmd-item-chap">제${item.chapter}장</span>
-      `;
-      el.addEventListener('click', () => {
-        closeCommandPalette();
-        switchMode('story');
-        openStoryModal(item);
-      });
-      cmdResultsList.appendChild(el);
-    });
-  }
-
-  function moveCmdHighlight(direction) {
-    const items = cmdResultsList.querySelectorAll('.cmd-item');
-    if (items.length === 0) return;
-
-    items[cmdActiveIndex]?.classList.remove('active');
-    cmdActiveIndex = (cmdActiveIndex + direction + items.length) % items.length;
-    items[cmdActiveIndex]?.classList.add('active');
-    items[cmdActiveIndex]?.scrollIntoView({ block: 'nearest' });
-  }
-
-  function selectCmdItem() {
-    if (cmdFilteredItems[cmdActiveIndex]) {
-      const target = cmdFilteredItems[cmdActiveIndex];
-      closeCommandPalette();
-      switchMode('story');
-      openStoryModal(target);
-    }
-  }
-
-  // ========================================================
-  // FULLSCREEN HANDLER (F11)
-  // ========================================================
-  function toggleFullscreen(e) {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    const isFs = !!(
-      document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement
-    );
-
-    if (!isFs) {
-      const docEl = document.documentElement;
-      const requestMethod = docEl.requestFullscreen ||
-                            docEl.webkitRequestFullscreen ||
-                            docEl.webkitRequestFullScreen ||
-                            docEl.mozRequestFullScreen ||
-                            docEl.msRequestFullscreen;
-
-      if (requestMethod) {
-        try {
-          const promise = requestMethod.call(docEl);
-          if (promise && promise.catch) {
-            promise.catch(() => {
-              showToast('💡 브라우저 F11 키를 직접 누르면 전체화면으로 전환됩니다.');
-            });
-          }
-        } catch (err) {
-          showToast('💡 키보드의 F11 키를 직접 누르면 전체화면으로 전환됩니다.');
-        }
-      } else {
-        showToast('💡 브라우저의 F11 키를 눌러 전체화면으로 전환해 주세요.');
-      }
-    } else {
-      const exitMethod = document.exitFullscreen ||
-                         document.webkitExitFullscreen ||
-                         document.webkitCancelFullScreen ||
-                         document.mozCancelFullScreen ||
-                         document.msExitFullscreen;
-      if (exitMethod) {
-        try {
-          const promise = exitMethod.call(document);
-          if (promise && promise.catch) promise.catch(() => {});
-        } catch (err) {}
-      }
-    }
-  }
-
-  function updateFullscreenUI() {
-    const isFs = !!(
-      document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement
-    );
-
-    document.body.classList.toggle('is-native-fullscreen', isFs);
-    if (storyModalBackdrop) {
-      storyModalBackdrop.classList.toggle('is-native-fullscreen', isFs);
-    }
-
-    if (btnToggleFullscreen) {
-      btnToggleFullscreen.classList.toggle('is-fullscreen', isFs);
-      btnToggleFullscreen.title = isFs ? '전체화면 해제 (단축키: F / Esc)' : '브라우저 전체화면 전환 (단축키: F / F11)';
-      const fsIconEnter = btnToggleFullscreen.querySelector('.fs-icon-enter');
-      const fsIconExit = btnToggleFullscreen.querySelector('.fs-icon-exit');
-      const fsText = btnToggleFullscreen.querySelector('.fs-text');
-      if (fsIconEnter) fsIconEnter.style.display = isFs ? 'none' : 'inline-block';
-      if (fsIconExit) fsIconExit.style.display = isFs ? 'inline-block' : 'none';
-      if (fsText) fsText.textContent = isFs ? '화면 해제' : '전체화면';
-    }
-
-    if (isFs) {
-      showToast('⛶ 전체화면 모드 (단축키: F 또는 Esc 로 해제)');
-    }
-  }
-
-  // Switch between Story Mode and Video Mode
+  // ==========================================
+  // 4. Mode Switching Logic
+  // ==========================================
   function switchMode(mode) {
+    if (currentMode === mode) return;
     currentMode = mode;
+
+    modeStoryBtn.classList.toggle('active', mode === 'story');
+    if (modeBookBtn) modeBookBtn.classList.toggle('active', mode === 'book');
+    modeVideoBtn.classList.toggle('active', mode === 'video');
+
+    storiesSection.style.display = mode === 'story' ? 'block' : 'none';
+    if (booksSection) booksSection.style.display = mode === 'book' ? 'block' : 'none';
+    videosSection.style.display = mode === 'video' ? 'block' : 'none';
+
+    // Update Hero Banner
     if (mode === 'story') {
-      modeStoryBtn.classList.add('active');
-      modeVideoBtn.classList.remove('active');
-      storiesSection.style.display = 'block';
-      videosSection.style.display = 'none';
-      
       heroTitle.textContent = '다카하시 신지 이야기 · 237편 완역';
       heroSubtitle.textContent = '5개 장으로 완성된 신지의 일대기와 영적 진리, 그리고 237편 요약 만화 카드와 번역 전문을 제공합니다.';
-      searchInput.placeholder = '이야기 번호, 제목, 키워드 검색...';
+      totalCountEl.textContent = '237';
       subStat1.textContent = '5개 장 체계';
       subStat2.textContent = '237편 만화 요약 & 번역 전문 1:1';
-      totalCountEl.textContent = activeStories.length;
+      searchInput.placeholder = '이야기 번호, 제목, 키워드 검색...';
+    } else if (mode === 'book') {
+      heroTitle.textContent = '다카하시 신지 정법 도서관 · 핵심 서적 및 유고 완역';
+      heroSubtitle.textContent = '10대 핵심 강연록 집대성 『강연집』 및 최후의 미완성 대작 『신·부활』 전편을 프리미엄 전자책으로 제공합니다.';
+      totalCountEl.textContent = `${activeBooks.length}`;
+      subStat1.textContent = '강연집 10강 + 신부활 3부 13절';
+      subStat2.textContent = '프리미엄 2열 스플릿 전자책 뷰어';
+      searchInput.placeholder = '서적 챕터, 강연 제목, 신리 키워드 검색...';
+      renderBooksSection();
     } else {
-      modeVideoBtn.classList.add('active');
-      modeStoryBtn.classList.remove('active');
-      storiesSection.style.display = 'none';
-      videosSection.style.display = 'block';
-
-      heroTitle.textContent = '마음의 원리와 영혼의 조화';
-      heroSubtitle.textContent = '다카하시 신지 종교지도자의 강연 시리즈를 한국어 번역 자막 및 강연록과 함께 시청하실 수 있습니다.';
-      searchInput.placeholder = '강의 제목, 키워드 검색...';
-      subStat1.textContent = '편당 약 1시간 45분';
-      subStat2.textContent = '무료 시청 & 강연록';
-      totalCountEl.textContent = activeLectures.length;
+      heroTitle.textContent = '다카하시 신지 강연 동영상 & 음원 아카이브';
+      heroSubtitle.textContent = '노래, DVD 강연 시리즈(01~18), CD 음성 강연 등 47편의 귀중한 육성 기록을 타임스탬프 목차와 함께 감상하세요.';
+      totalCountEl.textContent = '47';
+      subStat1.textContent = '노래 · DVD · CD 전편';
+      subStat2.textContent = '초단위 타임스탬프 목차 지원';
+      searchInput.placeholder = '강연 번호, 제목, 강연 주제 검색...';
     }
 
     checkContinueReading();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ========================================================
-  // STORY SECTION LOGIC (Smart Number Search & Bookmarks)
-  // ========================================================
-  function updateStoriesData() {
-    const rawQ = (searchQuery || '').trim();
-    const cleanQ = rawQ.toLowerCase();
-    
-    const isNumSearch = /^[#]?\d+$/.test(rawQ);
-    const targetNum = isNumSearch ? parseInt(rawQ.replace('#', ''), 10) : null;
+  // ==========================================
+  // 5. Books Library Section Logic
+  // ==========================================
+  function renderBooksSection() {
+    if (!booksSection || activeBooks.length === 0) return;
 
-    activeStories = STORIES_DATA.filter(item => {
-      // Check Bookmark Tab
-      if (storyChapter === 'bookmark') {
-        if (!bookmarkedIds.includes(item.id)) return false;
-      } else if (storyChapter !== 'all') {
-        if (item.chapter !== parseInt(storyChapter)) return false;
-      }
-
-      if (!cleanQ) return true;
-
-      if (targetNum !== null) {
-        if (item.id === targetNum) return true;
-        const digits = rawQ.replace('#', '');
-        if (digits.length >= 2 && item.num.includes(digits)) return true;
-        return false;
-      }
-
-      return item.num.includes(cleanQ) ||
-        item.number.toLowerCase().includes(cleanQ) ||
-        item.title.toLowerCase().includes(cleanQ) ||
-        (item.origTitle && item.origTitle.toLowerCase().includes(cleanQ)) ||
-        item.summary.toLowerCase().includes(cleanQ) ||
-        item.body.toLowerCase().includes(cleanQ);
-    });
-
-    if (targetNum !== null && activeStories.length > 1) {
-      activeStories.sort((a, b) => (a.id === targetNum ? -1 : b.id === targetNum ? 1 : a.id - b.id));
-    }
-
-    if (currentMode === 'story' && totalCountEl) {
-      totalCountEl.textContent = activeStories.length;
-    }
-
-    // Update Chapter Roadmap Banner
-    if (storyChapter !== 'all' && storyChapter !== 'bookmark' && typeof STORY_CHAPTERS !== 'undefined') {
-      const chapMeta = STORY_CHAPTERS.find(c => c.id === parseInt(storyChapter));
-      if (chapMeta) {
-        chapterInfoBanner.style.display = 'flex';
-        chapBannerBadge.textContent = chapMeta.name;
-        chapBannerBadge.className = `chapter-badge-lg chap-${chapMeta.id}`;
-        chapBannerTitle.textContent = chapMeta.title;
-        chapBannerRange.textContent = `${chapMeta.range} (총 ${chapMeta.id === 5 ? 37 : 50}편)`;
-        chapBannerFlow.textContent = chapMeta.flow;
-      }
-    } else {
-      chapterInfoBanner.style.display = 'none';
-    }
-
-    // Reset Grid & Check Empty State
-    storyGrid.innerHTML = '';
-    loadedStoryCount = 0;
-
-    if (activeStories.length === 0) {
-      if (storyChapter === 'bookmark') {
-        storyGrid.innerHTML = `
-          <div class="empty-state-card">
-            <div class="empty-state-icon">⭐</div>
-            <h3 class="empty-state-title">보관함이 비어 있습니다</h3>
-            <p class="empty-state-desc">감명 깊은 이야기의 상단 <strong>[ ⭐ 보관 ]</strong> 버튼을 누르면<br>언제든 이곳에서 모아서 감상하실 수 있습니다.</p>
+    // 1. Render Book Tabs
+    if (bookNavTabs) {
+      bookNavTabs.innerHTML = '';
+      activeBooks.forEach(book => {
+        const btn = document.createElement('button');
+        btn.className = `book-tab-btn ${book.id === currentBookId ? 'active' : ''}`;
+        btn.innerHTML = `
+          <span class="book-tab-icon">${book.id === 'lectures' ? '📜' : '✨'}</span>
+          <div class="book-tab-text">
+            <span class="book-tab-title">${book.title}</span>
+            <span class="book-tab-meta">${book.badge} · ${book.totalChapters}개 챕터</span>
           </div>
         `;
-      } else {
-        storyGrid.innerHTML = `
+        btn.addEventListener('click', () => {
+          currentBookId = book.id;
+          renderBooksSection();
+        });
+        bookNavTabs.appendChild(btn);
+      });
+    }
+
+    const currentBook = activeBooks.find(b => b.id === currentBookId) || activeBooks[0];
+
+    // 2. Render Spotlight Hero Card
+    if (bookSpotlightCard) {
+      bookSpotlightCard.innerHTML = `
+        <div class="book-spotlight-inner">
+          <div class="book-cover-graphic" style="background: ${currentBook.coverGradient}; border-color: ${currentBook.accentColor};">
+            <span class="cover-badge">${currentBook.badge}</span>
+            <div class="cover-title-group">
+              <h4 class="cover-title">${currentBook.title}</h4>
+              <p class="cover-author">${currentBook.author}</p>
+            </div>
+          </div>
+          <div class="book-spotlight-info">
+            <div class="spotlight-badge-row">
+              <span class="spotlight-badge">${currentBook.badge}</span>
+              <span class="spotlight-pages">📄 총 ${currentBook.totalPages}쪽 · ${currentBook.totalChapters}개 챕터 완역</span>
+            </div>
+            <h2 class="spotlight-title">${currentBook.title}</h2>
+            <p class="spotlight-subtitle">${currentBook.subtitle || currentBook.origTitle}</p>
+            <p class="spotlight-desc">${currentBook.description}</p>
+            <div class="spotlight-cta-row">
+              <button class="btn-read-start" id="btnSpotlightReadStart">
+                <span>📖 1장부터 전자책으로 정주행</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const readStartBtn = document.getElementById('btnSpotlightReadStart');
+      if (readStartBtn) {
+        readStartBtn.addEventListener('click', () => {
+          openBookReader(currentBook.id, 0);
+        });
+      }
+    }
+
+    // 3. Render Chapter Cards
+    if (bookChaptersGrid) {
+      bookChaptersGrid.innerHTML = '';
+      let chapters = currentBook.chapters;
+
+      // Filter by search query if present
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        chapters = chapters.filter(c => 
+          c.title.toLowerCase().includes(q) ||
+          c.number.toLowerCase().includes(q) ||
+          (c.origTitle && c.origTitle.toLowerCase().includes(q)) ||
+          (c.summary && c.summary.toLowerCase().includes(q)) ||
+          (c.tags && c.tags.some(t => t.toLowerCase().includes(q)))
+        );
+      }
+
+      if (bookChaptersGridTitle) {
+        bookChaptersGridTitle.textContent = `『${currentBook.title}』 수록 챕터`;
+      }
+      if (bookChaptersCountTag) {
+        bookChaptersCountTag.textContent = `총 ${chapters.length}개 챕터`;
+      }
+
+      if (chapters.length === 0) {
+        bookChaptersGrid.innerHTML = `
           <div class="empty-state-card">
             <div class="empty-state-icon">🔍</div>
-            <h3 class="empty-state-title">일치하는 이야기가 없습니다</h3>
-            <p class="empty-state-desc">'<strong>${escapeHtml(rawQ)}</strong>' 검색어와 일치하는 항목을 찾을 수 없습니다.<br>번호(예: 1, 237) 또는 다른 키워드로 검색해 보세요.</p>
-            <button class="empty-state-btn" id="btnResetStorySearch">전체 목록 보기</button>
+            <h3 class="empty-state-title">검색된 챕터가 없습니다</h3>
+            <p class="empty-state-desc">‘${escapeHtml(searchQuery)}’ 키워드와 일치하는 서적 챕터를 찾을 수 없습니다.</p>
           </div>
         `;
-        const resetBtn = document.getElementById('btnResetStorySearch');
-        if (resetBtn) {
-          resetBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            searchQuery = '';
-            if (searchClearBtn) searchClearBtn.style.display = 'none';
-            updateStoriesData();
-          });
-        }
+        return;
       }
+
+      chapters.forEach(chap => {
+        const originalIndex = currentBook.chapters.findIndex(c => c.id === chap.id);
+        const card = createChapterCard(currentBook, chap, originalIndex);
+        bookChaptersGrid.appendChild(card);
+      });
+    }
+  }
+
+  function createChapterCard(book, chap, index) {
+    const card = document.createElement('div');
+    card.className = 'book-chapter-card';
+
+    const tagsHtml = (chap.tags || []).map(t => `<span class="chap-tag-pill">#${t}</span>`).join('');
+
+    card.innerHTML = `
+      <div>
+        <div class="chap-card-top">
+          <span class="chap-card-num">${chap.number}</span>
+          <span class="chap-card-time">⏱️ ${chap.readingTime || '약 15분'}</span>
+        </div>
+        <h3 class="chap-card-title">${chap.title}</h3>
+        ${chap.origTitle ? `<p class="chap-card-orig-title">${chap.origTitle}</p>` : ''}
+        <p class="chap-card-summary">${chap.summary || ''}</p>
+        <div class="chap-card-tags">${tagsHtml}</div>
+      </div>
+      <div class="chap-card-footer">
+        <span class="chap-card-pages">${chap.origPages || chap.pageRange || ''}</span>
+        <button class="chap-card-read-btn">
+          <span>전문 읽기</span>
+          <span>➔</span>
+        </button>
+      </div>
+    `;
+
+    card.addEventListener('click', () => {
+      openBookReader(book.id, index);
+    });
+
+    return card;
+  }
+
+  // ==========================================
+  // 6. Premium E-Book Reader Modal Logic
+  // ==========================================
+  function openBookReader(bookId, chapterIndex = 0) {
+    const book = activeBooks.find(b => b.id === bookId) || activeBooks[0];
+    if (!book || !book.chapters || book.chapters.length === 0) return;
+
+    currentReadingBook = book;
+    currentReadingChapterIndex = Math.max(0, Math.min(chapterIndex, book.chapters.length - 1));
+
+    if (!bookReaderModal) return;
+
+    // Set theme and font
+    applyBookReaderTheme(bookReaderTheme);
+    applyBookFontSize(bookFontSizePercent);
+
+    // Update modal top bar info
+    if (readerBookBadge) readerBookBadge.textContent = book.title;
+    if (tocSidebarBookTitle) tocSidebarBookTitle.textContent = book.title;
+    if (tocSidebarBadge) tocSidebarBadge.textContent = book.badge;
+
+    // Render TOC Sidebar items
+    renderBookTocItems();
+
+    // Render Chapter Content
+    renderBookReaderChapter(currentReadingChapterIndex);
+
+    // Show Reader Modal
+    bookReaderModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Save last read info
+    localStorage.setItem('shinji_last_read_book', JSON.stringify({
+      bookId: book.id,
+      bookTitle: book.title,
+      chapterIndex: currentReadingChapterIndex,
+      chapterTitle: book.chapters[currentReadingChapterIndex].title
+    }));
+    checkContinueReading();
+
+    // Deep link URL Hash
+    if (history.replaceState) {
+      history.replaceState(null, '', `#book-${book.id}-${book.chapters[currentReadingChapterIndex].id}`);
+    }
+  }
+
+  function renderBookTocItems() {
+    if (!bookTocItemsList || !currentReadingBook) return;
+    bookTocItemsList.innerHTML = '';
+
+    currentReadingBook.chapters.forEach((chap, idx) => {
+      const btn = document.createElement('button');
+      btn.className = `toc-item-btn ${idx === currentReadingChapterIndex ? 'active' : ''}`;
+      btn.innerHTML = `
+        <span class="toc-item-num">${chap.number}</span>
+        <span class="toc-item-title">${chap.title}</span>
+        <span class="toc-item-meta">${chap.origPages || chap.pageRange || ''} · ${chap.readingTime || ''}</span>
+      `;
+      btn.addEventListener('click', () => {
+        currentReadingChapterIndex = idx;
+        renderBookReaderChapter(idx);
+        renderBookTocItems();
+        // On mobile, close TOC after selecting
+        if (window.innerWidth <= 1024 && bookTocSidebar) {
+          bookTocSidebar.classList.remove('toc-open');
+        }
+      });
+      bookTocItemsList.appendChild(btn);
+    });
+  }
+
+  function renderBookReaderChapter(index) {
+    if (!currentReadingBook) return;
+    const chapter = currentReadingBook.chapters[index];
+    if (!chapter) return;
+
+    // Top Bar Meta
+    if (readerChapterNumber) readerChapterNumber.textContent = chapter.number;
+    if (readerChapterTitle) readerChapterTitle.textContent = chapter.title;
+
+    // Bookmark Button state
+    updateBookBookmarkUI(chapter);
+
+    // Article Header
+    if (artChapterNumber) artChapterNumber.textContent = chapter.number;
+    if (artPageRange) artPageRange.textContent = chapter.origPages || chapter.pageRange || '';
+    if (artReadingTime) artReadingTime.textContent = `⏱️ ${chapter.readingTime || '약 15분'}`;
+    if (artChapterTitle) artChapterTitle.textContent = chapter.title;
+    if (artOrigTitle) {
+      artOrigTitle.textContent = chapter.origTitle || '';
+      artOrigTitle.style.display = chapter.origTitle ? 'block' : 'none';
+    }
+
+    // Tags
+    if (artTagsBar) {
+      artTagsBar.innerHTML = (chapter.tags || []).map(t => `<span class="chap-tag-pill">#${t}</span>`).join('');
+    }
+
+    // Guide Box
+    if (artGuideBox && artGuideText) {
+      if (chapter.guideNote) {
+        artGuideText.textContent = chapter.guideNote;
+        artGuideBox.style.display = 'block';
+      } else {
+        artGuideBox.style.display = 'none';
+      }
+    }
+
+    // Summary Box
+    if (artSummaryBox && artSummaryText) {
+      if (chapter.summary) {
+        artSummaryText.textContent = chapter.summary;
+        artSummaryBox.style.display = 'block';
+      } else {
+        artSummaryBox.style.display = 'none';
+      }
+    }
+
+    // Body Paragraphs
+    if (artParagraphsContainer) {
+      artParagraphsContainer.innerHTML = '';
+      (chapter.paragraphs || []).forEach(pText => {
+        const p = document.createElement('p');
+        if (pText.startsWith('“') || pText.startsWith('"') || pText.startsWith('‘')) {
+          p.classList.add('dialogue-para');
+        }
+        p.textContent = pText;
+        artParagraphsContainer.appendChild(p);
+      });
+    }
+
+    // Bottom Navigation
+    const prevChap = index > 0 ? currentReadingBook.chapters[index - 1] : null;
+    const nextChap = index < currentReadingBook.chapters.length - 1 ? currentReadingBook.chapters[index + 1] : null;
+
+    if (btnBookPrevChapter && btnBookPrevTitle) {
+      btnBookPrevChapter.disabled = !prevChap;
+      btnBookPrevTitle.textContent = prevChap ? `${prevChap.number} ${prevChap.title}` : '첫 챕터입니다';
+    }
+    if (btnBookNextChapter && btnBookNextTitle) {
+      btnBookNextChapter.disabled = !nextChap;
+      btnBookNextTitle.textContent = nextChap ? `${nextChap.number} ${nextChap.title}` : '마지막 챕터입니다';
+    }
+
+    // Reset scroll & progress
+    if (bookContentCanvas) {
+      bookContentCanvas.scrollTop = 0;
+    }
+    if (bookReadingProgressBar) {
+      bookReadingProgressBar.style.width = '0%';
+    }
+
+    // Highlight active in sidebar
+    renderBookTocItems();
+
+    // Save Last Read
+    localStorage.setItem('shinji_last_read_book', JSON.stringify({
+      bookId: currentReadingBook.id,
+      bookTitle: currentReadingBook.title,
+      chapterIndex: index,
+      chapterTitle: chapter.title
+    }));
+  }
+
+  function closeBookReader() {
+    if (bookReaderModal) {
+      bookReaderModal.style.display = 'none';
+    }
+    document.body.style.overflow = '';
+    if (history.replaceState && window.location.hash.startsWith('#book-')) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }
+
+  function navigateBookChapter(direction) {
+    if (!currentReadingBook) return;
+    const newIdx = currentReadingChapterIndex + direction;
+    if (newIdx >= 0 && newIdx < currentReadingBook.chapters.length) {
+      currentReadingChapterIndex = newIdx;
+      renderBookReaderChapter(newIdx);
+    }
+  }
+
+  function updateReadingProgress() {
+    if (!bookContentCanvas || !bookReadingProgressBar) return;
+    const scrollTop = bookContentCanvas.scrollTop;
+    const scrollHeight = bookContentCanvas.scrollHeight - bookContentCanvas.clientHeight;
+    if (scrollHeight > 0) {
+      const progress = Math.min(100, Math.max(0, Math.round((scrollTop / scrollHeight) * 100)));
+      bookReadingProgressBar.style.width = `${progress}%`;
+    }
+  }
+
+  function toggleBookToc() {
+    if (!bookTocSidebar) return;
+    if (window.innerWidth <= 1024) {
+      bookTocSidebar.classList.toggle('toc-open');
+    } else {
+      isBookTocOpen = !isBookTocOpen;
+      bookTocSidebar.classList.toggle('collapsed', !isBookTocOpen);
+      if (btnToggleBookToc) {
+        btnToggleBookToc.classList.toggle('active', isBookTocOpen);
+      }
+    }
+  }
+
+  function cycleBookTheme() {
+    const themes = ['cinema', 'oled', 'sepia'];
+    const currentIdx = themes.indexOf(bookReaderTheme);
+    const nextTheme = themes[(currentIdx + 1) % themes.length];
+    applyBookReaderTheme(nextTheme);
+  }
+
+  function applyBookReaderTheme(theme) {
+    bookReaderTheme = theme;
+    localStorage.setItem('shinji_book_theme', theme);
+    if (bookReaderModal) {
+      bookReaderModal.setAttribute('data-theme', theme);
+    }
+    if (bookThemeLabel) {
+      const labels = { cinema: '시네마', oled: 'OLED', sepia: '세피아' };
+      bookThemeLabel.textContent = labels[theme] || '시네마';
+    }
+  }
+
+  function adjustBookFontSize(delta) {
+    const validSizes = [85, 95, 100, 110, 120, 130, 140];
+    let currentIdx = validSizes.indexOf(bookFontSizePercent);
+    if (currentIdx === -1) currentIdx = 2; // default 100
+
+    if (delta > 0 && currentIdx < validSizes.length - 1) {
+      applyBookFontSize(validSizes[currentIdx + 1]);
+    } else if (delta < 0 && currentIdx > 0) {
+      applyBookFontSize(validSizes[currentIdx - 1]);
+    }
+  }
+
+  function applyBookFontSize(size) {
+    bookFontSizePercent = size;
+    localStorage.setItem('shinji_book_font', size.toString());
+    if (artParagraphsContainer) {
+      artParagraphsContainer.style.fontSize = `${(size / 100) * 1.15}rem`;
+    }
+    if (bookFontIndicator) {
+      bookFontIndicator.textContent = `${size}%`;
+    }
+  }
+
+  function toggleBookFullscreen() {
+    if (!document.fullscreenElement) {
+      if (bookReaderModal.requestFullscreen) {
+        bookReaderModal.requestFullscreen();
+      } else if (bookReaderModal.webkitRequestFullscreen) {
+        bookReaderModal.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }
+
+  function toggleCurrentBookBookmark() {
+    if (!currentReadingBook) return;
+    const chap = currentReadingBook.chapters[currentReadingChapterIndex];
+    const itemKey = `${currentReadingBook.id}-${chap.id}`;
+
+    const exists = bookmarkedBookChapters.includes(itemKey);
+    if (exists) {
+      bookmarkedBookChapters = bookmarkedBookChapters.filter(k => k !== itemKey);
+      showToast('📖 보관함에서 제거되었습니다.');
+    } else {
+      bookmarkedBookChapters.push(itemKey);
+      showToast('⭐ 보관함에 저장되었습니다.');
+    }
+    localStorage.setItem('shinji_book_bookmarks', JSON.stringify(bookmarkedBookChapters));
+    updateBookBookmarkUI(chap);
+  }
+
+  function updateBookBookmarkUI(chapter) {
+    if (!btnBookmarkBookChapter || !currentReadingBook) return;
+    const itemKey = `${currentReadingBook.id}-${chapter.id}`;
+    const isBookmarked = bookmarkedBookChapters.includes(itemKey);
+    const starIcon = btnBookmarkBookChapter.querySelector('.btn-star-icon');
+    const label = btnBookmarkBookChapter.querySelector('.btn-tool-label');
+
+    if (starIcon) starIcon.textContent = isBookmarked ? '★' : '☆';
+    if (label) label.textContent = isBookmarked ? '보관됨' : '보관';
+    btnBookmarkBookChapter.classList.toggle('active', isBookmarked);
+  }
+
+  function copyCurrentBookText() {
+    if (!currentReadingBook) return;
+    const chap = currentReadingBook.chapters[currentReadingChapterIndex];
+    const textToCopy = `[${currentReadingBook.title}] ${chap.number} ${chap.title}\n\n${(chap.paragraphs || []).join('\n\n')}\n\n- 다카하시 신지 아카이브`;
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      showToast('📋 본문 전문이 클립보드에 복사되었습니다.');
+    }).catch(() => {
+      showToast('복사에 실패했습니다.');
+    });
+  }
+
+  // ==========================================
+  // 7. Story Archive & Modal Logic
+  // ==========================================
+  function updateStoriesData() {
+    let filtered = [...STORIES_DATA];
+
+    if (storyChapter === 'bookmark') {
+      filtered = filtered.filter(s => bookmarkedIds.includes(s.id));
+    } else if (storyChapter !== 'all') {
+      filtered = filtered.filter(s => s.chapter === parseInt(storyChapter, 10));
+    }
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(s => 
+        s.number.toLowerCase().includes(q) ||
+        s.title.toLowerCase().includes(q) ||
+        (s.origTitle && s.origTitle.toLowerCase().includes(q)) ||
+        (s.body && s.body.toLowerCase().includes(q)) ||
+        (s.keywords && s.keywords.some(k => k.toLowerCase().includes(q)))
+      );
+    }
+
+    activeStories = filtered;
+    loadedStoryCount = 0;
+    storyGrid.innerHTML = '';
+
+    if (chapterInfoBanner) {
+      if (storyChapter !== 'all' && storyChapter !== 'bookmark') {
+        const chapInfo = getChapterInfo(parseInt(storyChapter, 10));
+        chapBannerBadge.textContent = chapInfo.badge;
+        chapBannerTitle.textContent = chapInfo.title;
+        chapBannerRange.textContent = `${chapInfo.range} (총 ${chapInfo.count}편)`;
+        chapBannerFlow.textContent = chapInfo.flow;
+        chapterInfoBanner.style.display = 'block';
+      } else {
+        chapterInfoBanner.style.display = 'none';
+      }
+    }
+
+    if (activeStories.length === 0) {
+      storyGrid.innerHTML = `
+        <div class="empty-state-card">
+          <div class="empty-state-icon">${storyChapter === 'bookmark' ? '⭐' : '🔍'}</div>
+          <h3 class="empty-state-title">${storyChapter === 'bookmark' ? '보관된 이야기가 없습니다' : '검색 결과가 없습니다'}</h3>
+          <p class="empty-state-desc">${storyChapter === 'bookmark' ? '이야기 리더에서 별(☆) 아이콘을 눌러 즐겨찾기에 추가해 보세요.' : `‘${escapeHtml(searchQuery)}’ 에 해당하는 이야기를 찾을 수 없습니다.`}</p>
+        </div>
+      `;
       if (storyLoadingTrigger) storyLoadingTrigger.style.display = 'none';
       return;
     }
@@ -781,132 +901,138 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderNextStoryChunk() {
-    if (isStoryLoading || loadedStoryCount >= activeStories.length) {
-      if (storyLoadingTrigger) storyLoadingTrigger.style.display = 'none';
-      return;
-    }
-
+    if (isStoryLoading || loadedStoryCount >= activeStories.length) return;
     isStoryLoading = true;
-    if (storyLoadingTrigger) storyLoadingTrigger.style.display = 'block';
 
-    const nextBatch = activeStories.slice(loadedStoryCount, loadedStoryCount + STORY_CHUNK);
+    const nextChunk = activeStories.slice(loadedStoryCount, loadedStoryCount + STORY_CHUNK);
+    nextChunk.forEach(story => {
+      const card = createStoryCard(story);
+      storyGrid.appendChild(card);
+    });
 
-    setTimeout(() => {
-      const fragment = document.createDocumentFragment();
+    loadedStoryCount += nextChunk.length;
+    isStoryLoading = false;
 
-      nextBatch.forEach(item => {
-        const card = createStoryCard(item);
-        fragment.appendChild(card);
-      });
-
-      storyGrid.appendChild(fragment);
-      loadedStoryCount += nextBatch.length;
-      isStoryLoading = false;
-
-      if (loadedStoryCount >= activeStories.length) {
-        if (storyLoadingTrigger) storyLoadingTrigger.style.display = 'none';
-      }
-    }, 40);
+    if (storyLoadingTrigger) {
+      storyLoadingTrigger.style.display = loadedStoryCount < activeStories.length ? 'block' : 'none';
+    }
   }
 
-  function createStoryCard(item) {
+  function createStoryCard(story) {
     const card = document.createElement('div');
-    card.className = 'story-card';
-    card.setAttribute('data-id', item.id);
+    card.className = `story-card chap-${story.chapter}`;
 
-    const chapMeta = item.chapterMeta || { name: `제${item.chapter}장`, badgeColor: 'purple' };
-    const thumbSrc = item.thumb || item.image;
+    const isBookmarked = bookmarkedIds.includes(story.id);
+    const storyNumStr = story.num || String(story.id).padStart(3, '0');
+    const thumbUrl = story.thumb || story.thumbImage || `images/stories/thumbs/${storyNumStr}.webp`;
+    const fullUrl = story.image || story.fullImage || `images/stories/${storyNumStr}.webp`;
 
     card.innerHTML = `
-      <div class="story-card-thumb-wrap">
-        <img src="${thumbSrc}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML='<div class=\\'story-card-text-cover\\'><span class=\\'text-cover-num\\'>${item.number}</span><p class=\\'text-cover-title\\'>${item.title}</p></div>'">
-        <div class="story-card-badges">
-          <span class="story-num-pill">${item.number}</span>
-          <span class="story-chap-pill chap-${item.chapter}">${chapMeta.name}</span>
-        </div>
-        <span class="story-media-tag">🖼️ 요약 만화</span>
+      <div class="card-image-box">
+        <img class="story-thumb" src="${thumbUrl}" alt="${story.title}" loading="lazy" decoding="async" onerror="this.src='${fullUrl}'">
+        <span class="card-chap-pill chap-${story.chapter}">제${story.chapter}장</span>
+        <button class="card-star-btn ${isBookmarked ? 'active' : ''}" data-id="${story.id}" title="보관함 저장">
+          ${isBookmarked ? '★' : '☆'}
+        </button>
       </div>
-      <div class="story-card-content">
-        <h4 class="story-card-title">${item.title}</h4>
-        ${item.origTitle ? `<p class="story-card-orig-title">${item.origTitle}</p>` : ''}
-        <p class="story-card-summary">${item.summary}</p>
-        <div class="story-card-footer">
-          <span class="story-card-read-btn">만화 크게 보기 ➔</span>
+      <div class="story-card-body">
+        <div class="card-meta-line">
+          <span class="story-num">${story.number}</span>
+          <span class="story-time">⏱️ 3분 읽기</span>
         </div>
+        <h3 class="story-title">${story.title}</h3>
+        <p class="story-excerpt">${story.body ? story.body.substring(0, 100) + '...' : ''}</p>
       </div>
     `;
 
-    card.addEventListener('click', () => {
-      openStoryModal(item);
+    // Click card to open modal
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.card-star-btn')) {
+        e.stopPropagation();
+        toggleBookmark(story.id);
+        return;
+      }
+      openStoryModal(story);
     });
 
     return card;
   }
 
-  // ========================================================
-  // IMMERSIVE FULLSCREEN COMIC VIEWER
-  // ========================================================
-  function openStoryModal(item) {
-    const idx = activeStories.findIndex(s => s.id === item.id);
-    currentStoryIndex = idx >= 0 ? idx : 0;
-    renderStoryModalContent(item);
+  function openStoryModal(story) {
+    const idx = activeStories.findIndex(s => s.id === story.id);
+    currentStoryIndex = idx !== -1 ? idx : 0;
+    renderStoryModalContent(story);
 
     storyModalBackdrop.classList.add('active');
     document.body.style.overflow = 'hidden';
 
-    // Save Last Read
-    localStorage.setItem('shinji_last_story', item.id);
+    // Save last read story
+    localStorage.setItem('shinji_last_story', story.id);
     checkContinueReading();
 
-    // Update URL hash for deep linking
     if (history.replaceState) {
-      history.replaceState(null, '', `#story-${item.num}`);
+      history.replaceState(null, '', `#story-${String(story.id).padStart(3, '0')}`);
     }
   }
 
-  function renderStoryModalContent(item) {
-    const chapMeta = item.chapterMeta || { name: `제${item.chapter}장`, title: '' };
+  function renderStoryModalContent(story) {
+    const storyNumStr = story.num || String(story.id).padStart(3, '0');
+    const fullUrl = story.image || story.fullImage || `images/stories/${storyNumStr}.webp`;
+    const thumbUrl = story.thumb || story.thumbImage || `images/stories/thumbs/${storyNumStr}.webp`;
 
-    // Header Badges & Title
-    storyModalChapBadge.textContent = chapMeta.name;
-    storyModalChapBadge.className = `viewer-chap-badge chap-${item.chapter}`;
-    storyModalNumber.textContent = item.number;
-    storyModalTitle.textContent = item.title;
-    storyModalIndex.textContent = `${item.num} / ${typeof STORIES_DATA !== 'undefined' ? STORIES_DATA.length : 237}`;
+    storyModalChapBadge.textContent = `제${story.chapter}장`;
+    storyModalNumber.textContent = story.number;
+    storyModalTitle.textContent = story.title;
+    storyModalIndex.textContent = `${storyNumStr} / 237`;
+    storyModalImage.src = fullUrl;
+    storyModalImage.alt = `${story.number} ${story.title} 요약 만화`;
+    storyModalImage.onerror = function() {
+      this.src = thumbUrl;
+    };
 
-    // Update Bookmark UI
-    updateBookmarkButtonUI(item.id);
-
-    // Load High-Res Comic Image
-    storyModalImage.src = item.image;
-    storyModalImage.alt = `${item.number} ${item.title}`;
-
-    // Populate Translation Drawer
-    metaOrigTitle.textContent = item.origTitle ? `원제: ${item.origTitle}` : '원문 표기 없음';
-    if (item.contentType) {
-      metaContentType.textContent = item.contentType;
-      rowContentType.style.display = 'flex';
-    } else {
-      rowContentType.style.display = 'none';
+    if (metaOrigTitle) metaOrigTitle.textContent = story.origTitle || '';
+    if (metaContentType) metaContentType.textContent = story.contentType || '-';
+    if (storyModalBodyText) {
+      storyModalBodyText.innerHTML = (story.paragraphs || [story.body]).map(p => `<p>${p}</p>`).join('');
     }
 
-    storyModalBodyText.textContent = item.body;
-
-    if (item.notes && item.notes.trim()) {
-      storyCommentarySection.style.display = 'block';
-      storyModalNotes.textContent = item.notes;
-    } else {
-      storyCommentarySection.style.display = 'none';
-      storyModalNotes.textContent = '';
+    if (storyModalNotes && storyCommentarySection) {
+      if (story.notes) {
+        let notesArr = [];
+        if (Array.isArray(story.notes)) {
+          notesArr = story.notes;
+        } else if (typeof story.notes === 'string' && story.notes.trim()) {
+          notesArr = story.notes.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+        }
+        if (notesArr.length > 0) {
+          storyModalNotes.innerHTML = notesArr.map(n => `<li>${n.replace(/^[•\-\*]\s*/, '')}</li>`).join('');
+          storyCommentarySection.style.display = 'block';
+        } else {
+          storyCommentarySection.style.display = 'none';
+        }
+      } else {
+        storyCommentarySection.style.display = 'none';
+      }
     }
 
-    // Apply font size
-    applyFontSize();
+    updateStoryBookmarkButton(story.id);
+  }
 
-    // Scroll panels to top
-    const drawerScroll = document.querySelector('.drawer-content-scroll');
-    if (drawerScroll) drawerScroll.scrollTop = 0;
-    storyMangaPanel.scrollTop = 0;
+  function closeStoryModal() {
+    storyModalBackdrop.classList.remove('active');
+    document.body.style.overflow = '';
+    closeTranslationDrawer();
+    if (history.replaceState && window.location.hash.startsWith('#story-')) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }
+
+  function navigateStory(direction) {
+    const newIdx = currentStoryIndex + direction;
+    if (newIdx >= 0 && newIdx < activeStories.length) {
+      currentStoryIndex = newIdx;
+      renderStoryModalContent(activeStories[newIdx]);
+    }
   }
 
   function toggleTranslationDrawer() {
@@ -921,141 +1047,160 @@ document.addEventListener('DOMContentLoaded', () => {
     btnToggleTranslation.classList.remove('active');
   }
 
-  function navigateStory(direction) {
-    if (activeStories.length === 0) return;
-    currentStoryIndex += direction;
-    if (currentStoryIndex < 0) {
-      currentStoryIndex = activeStories.length - 1;
-    } else if (currentStoryIndex >= activeStories.length) {
-      currentStoryIndex = 0;
-    }
-    const nextItem = activeStories[currentStoryIndex];
-    renderStoryModalContent(nextItem);
-
-    localStorage.setItem('shinji_last_story', nextItem.id);
-    checkContinueReading();
-
-    if (history.replaceState) {
-      history.replaceState(null, '', `#story-${nextItem.num}`);
-    }
-  }
-
-  function closeStoryModal() {
-    storyModalBackdrop.classList.remove('active');
-    document.body.style.overflow = '';
-    closeTranslationDrawer();
-
-    if (history.replaceState && window.location.hash.startsWith('#story-')) {
-      history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-  }
-
-  // Reader Font Size Controls
   function adjustFontSize(delta) {
-    currentFontSizePercent = Math.max(85, Math.min(145, currentFontSizePercent + delta));
-    applyFontSize();
-  }
+    const validSizes = [85, 100, 115, 130];
+    let currentIdx = validSizes.indexOf(currentFontSizePercent);
+    if (currentIdx === -1) currentIdx = 1;
 
-  function applyFontSize() {
+    if (delta > 0 && currentIdx < validSizes.length - 1) {
+      currentFontSizePercent = validSizes[currentIdx + 1];
+    } else if (delta < 0 && currentIdx > 0) {
+      currentFontSizePercent = validSizes[currentIdx - 1];
+    }
+
     if (storyModalBodyText) {
-      storyModalBodyText.style.fontSize = `${(1.02 * currentFontSizePercent) / 100}rem`;
+      storyModalBodyText.style.fontSize = `${currentFontSizePercent}%`;
     }
     if (fontIndicator) {
       fontIndicator.textContent = `${currentFontSizePercent}%`;
     }
   }
 
-  // Copy Full Story Text
   function copyCurrentStoryText() {
-    const item = activeStories[currentStoryIndex];
-    if (!item) return;
-
-    let fullTextToCopy = `${item.number} ${item.title}\n`;
-    if (item.origTitle) fullTextToCopy += `(원제: ${item.origTitle})\n`;
-    fullTextToCopy += `\n[한국어 번역 본문]\n${item.body}\n`;
-    if (item.notes && item.notes.trim()) {
-      fullTextToCopy += `\n[해설 및 번역 메모]\n${item.notes}\n`;
-    }
-    fullTextToCopy += `\n출처: 다카하시 신지 이야기 아카이브 (${window.location.origin}${window.location.pathname}#story-${item.num})`;
-
-    navigator.clipboard.writeText(fullTextToCopy).then(() => {
-      showToast('📋 이야기 본문이 클립보드에 복사되었습니다!');
-    }).catch(() => {
-      showToast('⚠️ 복사에 실패했습니다.');
+    const currentStory = activeStories[currentStoryIndex];
+    if (!currentStory) return;
+    const textToCopy = `[다카하시 신지 이야기 ${currentStory.number}] ${currentStory.title}\n\n${currentStory.body}\n\n- 다카하시 신지 웹 아카이브`;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      showToast('📋 번역 전문이 복사되었습니다.');
     });
   }
 
-  // Share Story Link
   function shareCurrentStoryLink() {
-    const item = activeStories[currentStoryIndex];
-    if (!item) return;
-
-    const url = `${window.location.origin}${window.location.pathname}#story-${item.num}`;
+    const currentStory = activeStories[currentStoryIndex];
+    if (!currentStory) return;
+    const url = `${window.location.origin}${window.location.pathname}#story-${String(currentStory.id).padStart(3, '0')}`;
     navigator.clipboard.writeText(url).then(() => {
-      showToast(`🔗 #${item.num} 이야기 링크가 복사되었습니다!`);
-    }).catch(() => {
-      showToast('⚠️ 링크 복사에 실패했습니다.');
+      showToast('🔗 이야기 공유 링크가 복사되었습니다.');
     });
   }
 
-  // Toast Notification
-  function showToast(msg) {
-    if (!toastBox) return;
-    const toast = document.createElement('div');
-    toast.className = 'toast-message';
-    toast.textContent = msg;
-    toastBox.appendChild(toast);
+  // ==========================================
+  // 8. Story Bookmarks & Themes
+  // ==========================================
+  function toggleBookmark(storyId) {
+    const idx = bookmarkedIds.indexOf(storyId);
+    if (idx !== -1) {
+      bookmarkedIds.splice(idx, 1);
+      showToast('보관함에서 제거되었습니다.');
+    } else {
+      bookmarkedIds.push(storyId);
+      showToast('⭐ 보관함에 추가되었습니다.');
+    }
+    localStorage.setItem('shinji_bookmarks', JSON.stringify(bookmarkedIds));
+    updateBookmarkCountPill();
+    if (currentMode === 'story' && storyChapter === 'bookmark') {
+      updateStoriesData();
+    } else {
+      document.querySelectorAll(`.card-star-btn[data-id="${storyId}"]`).forEach(btn => {
+        btn.classList.toggle('active', idx === -1);
+        btn.textContent = idx === -1 ? '★' : '☆';
+      });
+    }
+  }
 
-    setTimeout(() => {
-      if (toast.parentElement) {
-        toast.parentElement.removeChild(toast);
+  function toggleCurrentStoryBookmark() {
+    const currentStory = activeStories[currentStoryIndex];
+    if (currentStory) toggleBookmark(currentStory.id);
+  }
+
+  function updateStoryBookmarkButton(storyId) {
+    if (!btnBookmarkStory) return;
+    const isBookmarked = bookmarkedIds.includes(storyId);
+    const starIcon = btnBookmarkStory.querySelector('.btn-star-icon');
+    const label = btnBookmarkStory.querySelector('.btn-tool-label');
+    if (starIcon) starIcon.textContent = isBookmarked ? '★' : '☆';
+    if (label) label.textContent = isBookmarked ? '보관됨' : '보관';
+    btnBookmarkStory.classList.toggle('active', isBookmarked);
+  }
+
+  function updateBookmarkCountPill() {
+    if (bookmarkCountPill) {
+      bookmarkCountPill.textContent = bookmarkedIds.length.toString();
+    }
+  }
+
+  function cycleViewerTheme() {
+    const themes = ['cinema', 'oled', 'sepia'];
+    const currentIdx = themes.indexOf(currentViewerTheme);
+    const nextTheme = themes[(currentIdx + 1) % themes.length];
+    applyViewerTheme(nextTheme);
+  }
+
+  function applyViewerTheme(theme) {
+    currentViewerTheme = theme;
+    localStorage.setItem('shinji_viewer_theme', theme);
+    if (storyModalBackdrop) {
+      storyModalBackdrop.setAttribute('data-theme', theme);
+    }
+    if (themeLabel) {
+      const labels = { cinema: '시네마', oled: 'OLED', sepia: '세피아' };
+      themeLabel.textContent = labels[theme] || '시네마';
+    }
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      if (storyModalBackdrop.requestFullscreen) {
+        storyModalBackdrop.requestFullscreen();
+      } else if (storyModalBackdrop.webkitRequestFullscreen) {
+        storyModalBackdrop.webkitRequestFullscreen();
       }
-    }, 2600);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
   }
 
-  // ========================================================
-  // VIDEO LECTURE SECTION LOGIC
-  // ========================================================
+  function updateFullscreenUI() {
+    const isFs = !!document.fullscreenElement;
+    document.querySelectorAll('.fs-icon-enter').forEach(el => el.style.display = isFs ? 'none' : 'block');
+    document.querySelectorAll('.fs-icon-exit').forEach(el => el.style.display = isFs ? 'block' : 'none');
+  }
+
+  // ==========================================
+  // 9. Video Lectures Section Logic
+  // ==========================================
   function updateVideosData() {
-    const rawQ = (searchQuery || '').trim();
-    const cleanQ = rawQ.toLowerCase();
+    let filtered = [...LECTURE_DATA];
 
-    activeLectures = LECTURE_DATA.filter(item => {
-      const matchCategory = (videoCategory === 'all') || (item.category === videoCategory);
-      if (!matchCategory) return false;
-      if (!cleanQ) return true;
-
-      return item.title.toLowerCase().includes(cleanQ) ||
-        item.titleJp.toLowerCase().includes(cleanQ) ||
-        item.summary.toLowerCase().includes(cleanQ) ||
-        item.tags.some(tag => tag.toLowerCase().includes(cleanQ));
-    });
-
-    if (currentMode === 'video' && totalCountEl) {
-      totalCountEl.textContent = activeLectures.length;
+    if (videoCategory !== 'all') {
+      filtered = filtered.filter(v => v.category === videoCategory);
     }
 
-    videoGrid.innerHTML = '';
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(v => 
+        v.number.toLowerCase().includes(q) ||
+        v.title.toLowerCase().includes(q) ||
+        (v.titleJp && v.titleJp.toLowerCase().includes(q)) ||
+        (v.summary && v.summary.toLowerCase().includes(q)) ||
+        (v.tags && v.tags.some(t => t.toLowerCase().includes(q)))
+      );
+    }
+
+    activeLectures = filtered;
     loadedVideoCount = 0;
+    videoGrid.innerHTML = '';
 
     if (activeLectures.length === 0) {
       videoGrid.innerHTML = `
         <div class="empty-state-card">
           <div class="empty-state-icon">🎬</div>
-          <h3 class="empty-state-title">일치하는 강연 영상이 없습니다</h3>
-          <p class="empty-state-desc">'<strong>${escapeHtml(rawQ)}</strong>' 검색어와 일치하는 영상을 찾을 수 없습니다.<br>다른 주제나 키워드로 검색해 보세요.</p>
-          <button class="empty-state-btn" id="btnResetVideoSearch">전체 강연 보기</button>
+          <h3 class="empty-state-title">검색된 강연이 없습니다</h3>
+          <p class="empty-state-desc">‘${escapeHtml(searchQuery)}’ 에 해당하는 강연 영상을 찾을 수 없습니다.</p>
         </div>
       `;
-      const resetBtn = document.getElementById('btnResetVideoSearch');
-      if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-          searchInput.value = '';
-          searchQuery = '';
-          if (searchClearBtn) searchClearBtn.style.display = 'none';
-          updateVideosData();
-        });
-      }
       if (videoLoadingTrigger) videoLoadingTrigger.style.display = 'none';
       return;
     }
@@ -1064,38 +1209,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderNextVideoChunk() {
-    if (isVideoLoading || loadedVideoCount >= activeLectures.length) {
-      if (videoLoadingTrigger) videoLoadingTrigger.style.display = 'none';
-      return;
-    }
-
+    if (isVideoLoading || loadedVideoCount >= activeLectures.length) return;
     isVideoLoading = true;
-    if (videoLoadingTrigger) videoLoadingTrigger.style.display = 'block';
 
-    const nextBatch = activeLectures.slice(loadedVideoCount, loadedVideoCount + VIDEO_CHUNK);
+    const nextChunk = activeLectures.slice(loadedVideoCount, loadedVideoCount + VIDEO_CHUNK);
+    nextChunk.forEach(lecture => {
+      const card = createVideoCard(lecture);
+      videoGrid.appendChild(card);
+    });
 
-    setTimeout(() => {
-      const fragment = document.createDocumentFragment();
+    loadedVideoCount += nextChunk.length;
+    isVideoLoading = false;
 
-      nextBatch.forEach(item => {
-        const card = createVideoCard(item);
-        fragment.appendChild(card);
-      });
-
-      videoGrid.appendChild(fragment);
-      loadedVideoCount += nextBatch.length;
-      isVideoLoading = false;
-
-      if (loadedVideoCount >= activeLectures.length) {
-        if (videoLoadingTrigger) videoLoadingTrigger.style.display = 'none';
-      }
-    }, 40);
+    if (videoLoadingTrigger) {
+      videoLoadingTrigger.style.display = loadedVideoCount < activeLectures.length ? 'block' : 'none';
+    }
   }
 
   function createVideoCard(item) {
     const card = document.createElement('div');
     card.className = 'card';
-    card.setAttribute('data-id', item.id);
 
     const tagsHtml = item.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
 
@@ -1144,7 +1277,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const allRows = timestampList.querySelectorAll('.timestamp-item');
           allRows.forEach(r => r.classList.remove('active'));
           row.classList.add('active');
-
           playerFrame.src = `https://www.youtube.com/embed/${item.youtubeId}?autoplay=1&start=${ts.seconds}&enablejsapi=1&rel=0`;
         });
         timestampList.appendChild(row);
@@ -1153,7 +1285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     transcriptText.innerHTML = `
       <p style="margin-bottom: 12px; font-weight: 500; color: #fff;">${item.summary}</p>
-      <p style="color: var(--text-dim); font-size: 0.82rem;">* 상세 강의록 및 한글 번역 대본은 영상 타임스탬프 목차와 함께 순차적으로 업데이트됩니다.</p>
+      <p style="color: var(--text-dim); font-size: 0.82rem;">* 상세 강의록 및 한글 번역 대본은 상단 '정법 도서관' 강연집 10강 텍스트를 통해 확인하실 수 있습니다.</p>
     `;
 
     videoModalBackdrop.classList.add('active');
@@ -1177,15 +1309,256 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Check URL Hash for Deep Linking on Page Load
+  // ==========================================
+  // 10. Universal Command Palette (Ctrl + K)
+  // ==========================================
+  function openCommandPalette() {
+    if (!cmdPaletteModal) return;
+    cmdPaletteModal.classList.add('active');
+    cmdPaletteInput.value = '';
+    cmdPaletteInput.focus();
+    renderCmdResults('');
+  }
+
+  function closeCommandPalette() {
+    if (cmdPaletteModal) cmdPaletteModal.classList.remove('active');
+  }
+
+  function renderCmdResults(query) {
+    if (!cmdResultsList) return;
+    cmdResultsList.innerHTML = '';
+    const q = query.toLowerCase().trim();
+
+    let results = [];
+
+    // 1. Stories (237)
+    STORIES_DATA.forEach(s => {
+      if (!q || s.number.toLowerCase().includes(q) || s.title.toLowerCase().includes(q) || (s.keywords && s.keywords.some(k => k.toLowerCase().includes(q)))) {
+        results.push({
+          type: 'story',
+          categoryLabel: `📖 이야기 #${s.id}`,
+          title: `${s.number} ${s.title}`,
+          meta: `제${s.chapter}장`,
+          action: () => {
+            switchMode('story');
+            openStoryModal(s);
+          }
+        });
+      }
+    });
+
+    // 2. Books & Chapters
+    activeBooks.forEach(b => {
+      (b.chapters || []).forEach((c, idx) => {
+        if (!q || c.title.toLowerCase().includes(q) || c.number.toLowerCase().includes(q) || b.title.toLowerCase().includes(q)) {
+          results.push({
+            type: 'book',
+            categoryLabel: `📚 ${b.title}`,
+            title: `${c.number} ${c.title}`,
+            meta: c.origPages || c.pageRange || '',
+            action: () => {
+              switchMode('book');
+              openBookReader(b.id, idx);
+            }
+          });
+        }
+      });
+    });
+
+    // 3. Videos (47)
+    LECTURE_DATA.forEach(v => {
+      if (!q || v.number.toLowerCase().includes(q) || v.title.toLowerCase().includes(q) || (v.tags && v.tags.some(t => t.toLowerCase().includes(q)))) {
+        results.push({
+          type: 'video',
+          categoryLabel: `🎬 영상 ${v.category}`,
+          title: `${v.number} ${v.title}`,
+          meta: v.duration,
+          action: () => {
+            switchMode('video');
+            openVideoModal(v);
+          }
+        });
+      }
+    });
+
+    cmdFilteredItems = results.slice(0, 15);
+    cmdActiveIndex = 0;
+
+    if (cmdFilteredItems.length === 0) {
+      cmdResultsList.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-dim);">
+          일치하는 항목이 없습니다.
+        </div>
+      `;
+      return;
+    }
+
+    cmdFilteredItems.forEach((item, idx) => {
+      const itemEl = document.createElement('div');
+      itemEl.className = `cmd-result-item ${idx === 0 ? 'active' : ''}`;
+      itemEl.innerHTML = `
+        <div class="cmd-item-left">
+          <span class="cmd-item-badge">${item.categoryLabel}</span>
+          <span class="cmd-item-title">${item.title}</span>
+        </div>
+        <span class="cmd-item-meta">${item.meta}</span>
+      `;
+      itemEl.addEventListener('click', () => {
+        closeCommandPalette();
+        item.action();
+      });
+      cmdResultsList.appendChild(itemEl);
+    });
+  }
+
+  if (cmdPaletteInput) {
+    cmdPaletteInput.addEventListener('input', (e) => {
+      renderCmdResults(e.target.value);
+    });
+
+    cmdPaletteInput.addEventListener('keydown', (e) => {
+      if (cmdFilteredItems.length === 0) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        cmdActiveIndex = (cmdActiveIndex + 1) % cmdFilteredItems.length;
+        updateCmdActiveItem();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        cmdActiveIndex = (cmdActiveIndex - 1 + cmdFilteredItems.length) % cmdFilteredItems.length;
+        updateCmdActiveItem();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (cmdFilteredItems[cmdActiveIndex]) {
+          closeCommandPalette();
+          cmdFilteredItems[cmdActiveIndex].action();
+        }
+      } else if (e.key === 'Escape') {
+        closeCommandPalette();
+      }
+    });
+  }
+
+  function updateCmdActiveItem() {
+    const items = cmdResultsList.querySelectorAll('.cmd-result-item');
+    items.forEach((item, idx) => {
+      item.classList.toggle('active', idx === cmdActiveIndex);
+      if (idx === cmdActiveIndex) item.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  if (cmdPaletteModal) {
+    cmdPaletteModal.addEventListener('click', (e) => {
+      if (e.target === cmdPaletteModal) closeCommandPalette();
+    });
+  }
+
+  // ==========================================
+  // 11. Helper Functions
+  // ==========================================
+  function handleGlobalKeydown(e) {
+    // Ctrl + K or Cmd + K
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      openCommandPalette();
+      return;
+    }
+
+    // If Command Palette Open
+    if (cmdPaletteModal && cmdPaletteModal.classList.contains('active')) {
+      return;
+    }
+
+    // If E-Book Reader Modal Open
+    if (bookReaderModal && bookReaderModal.style.display === 'flex') {
+      if (e.key === 'Escape') {
+        closeBookReader();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        navigateBookChapter(-1);
+      } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        navigateBookChapter(1);
+      } else if (e.key.toLowerCase() === 'm') {
+        toggleBookToc();
+      } else if (e.key.toLowerCase() === 'b') {
+        toggleCurrentBookBookmark();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleBookFullscreen();
+      }
+      return;
+    }
+
+    // If Story Viewer Open
+    if (storyModalBackdrop && storyModalBackdrop.classList.contains('active')) {
+      if (e.key === 'Escape') {
+        closeStoryModal();
+      } else if (e.key === 'ArrowLeft') {
+        navigateStory(-1);
+      } else if (e.key === 'ArrowRight') {
+        navigateStory(1);
+      } else if (e.key.toLowerCase() === 't') {
+        toggleTranslationDrawer();
+      } else if (e.key.toLowerCase() === 'b') {
+        toggleCurrentStoryBookmark();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullscreen();
+      }
+      return;
+    }
+
+    // If Video Modal Open
+    if (videoModalBackdrop && videoModalBackdrop.classList.contains('active')) {
+      if (e.key === 'Escape') {
+        closeVideoModal();
+      }
+      return;
+    }
+  }
+
+  function checkContinueReading() {
+    if (!continueReadingBanner || !continueStoryTitle) return;
+
+    if (currentMode === 'story') {
+      const lastId = parseInt(localStorage.getItem('shinji_last_story'), 10);
+      if (lastId) {
+        const story = STORIES_DATA.find(s => s.id === lastId);
+        if (story) {
+          continueStoryTitle.textContent = `${story.number} ${story.title}`;
+          continueReadingBanner.style.display = 'flex';
+          return;
+        }
+      }
+    } else if (currentMode === 'book') {
+      const lastBookJson = localStorage.getItem('shinji_last_read_book');
+      if (lastBookJson) {
+        try {
+          const lastInfo = JSON.parse(lastBookJson);
+          continueStoryTitle.textContent = `『${lastInfo.bookTitle}』 ${lastInfo.chapterTitle}`;
+          continueReadingBanner.style.display = 'flex';
+          return;
+        } catch (err) {}
+      }
+    } else {
+      const lastVidId = parseInt(localStorage.getItem('shinji_last_video'), 10);
+      if (lastVidId) {
+        const video = LECTURE_DATA.find(v => v.id === lastVidId);
+        if (video) {
+          continueStoryTitle.textContent = `${video.number} ${video.title}`;
+          continueReadingBanner.style.display = 'flex';
+          return;
+        }
+      }
+    }
+
+    continueReadingBanner.style.display = 'none';
+  }
+
   function checkUrlHash() {
     const hash = window.location.hash;
     if (!hash) return;
 
+    // 1. Story Deep Link: #story-001
     const storyMatch = hash.match(/^#story-(\d+)$/i);
     if (storyMatch) {
-      const storyNum = storyMatch[1];
-      const storyId = parseInt(storyNum, 10);
+      const storyId = parseInt(storyMatch[1], 10);
       const story = STORIES_DATA.find(s => s.id === storyId);
       if (story) {
         switchMode('story');
@@ -1194,6 +1567,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // 2. Book Deep Link: #book-lectures-1 or #book-shin_buhwal-1
+    const bookMatch = hash.match(/^#book-([a-z0-9_]+)-(\d+)$/i);
+    if (bookMatch) {
+      const bId = bookMatch[1];
+      const chId = parseInt(bookMatch[2], 10);
+      const book = activeBooks.find(b => b.id === bId);
+      if (book) {
+        const chIdx = book.chapters.findIndex(c => c.id === chId);
+        switchMode('book');
+        openBookReader(bId, chIdx !== -1 ? chIdx : 0);
+        return;
+      }
+    }
+
+    // 3. Video Deep Link: #video-01
     const videoMatch = hash.match(/^#video-(\d+)$/i);
     if (videoMatch) {
       const vidId = parseInt(videoMatch[1], 10);
@@ -1206,7 +1594,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Infinite Scroll Trigger
   function handleScroll() {
     const scrollPosition = window.innerHeight + window.scrollY;
     const documentHeight = document.documentElement.scrollHeight;
@@ -1214,10 +1601,32 @@ document.addEventListener('DOMContentLoaded', () => {
     if (scrollPosition >= documentHeight - 600) {
       if (currentMode === 'story') {
         renderNextStoryChunk();
-      } else {
+      } else if (currentMode === 'video') {
         renderNextVideoChunk();
       }
     }
+  }
+
+  function showToast(msg) {
+    if (!toastBox) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast-message';
+    toast.textContent = msg;
+    toastBox.appendChild(toast);
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 2600);
+  }
+
+  function getChapterInfo(chapNum) {
+    const chapters = {
+      1: { badge: '제1장', title: '탄생과 전생, 그리고 참된 메시아의 출현', range: '001–050', count: 50, flow: '출생·가족·전생 → 어린 시절 체험 → 영적 각성 → 신지의 사명과 정법' },
+      2: { badge: '제2장', title: '영혼의 세계와 정법의 실천', range: '051–100', count: 50, flow: '영혼·수호령·지도령 → 윤회 → 빙의·영적 현상 → 마음과 생활의 조화' },
+      3: { badge: '제3장', title: '마음의 본질과 인간의 목적·사명', range: '101–150', count: 50, flow: '마음의 구조 → 신리와 과학 → 인간의 목적 → 윤회와 사명 → 사후세계와 현증' },
+      4: { badge: '제4장', title: '정법의 전개와 삶에서 드러나는 현증', range: '151–200', count: 50, flow: '정법의 유전 → 사회·종교 비판 → 다양한 체험·현증 → 인생의 의미와 실천' },
+      5: { badge: '제5장', title: '신리의 완성과 인류·지구의 미래', range: '201–237', count: 37, flow: '새로운 부활 → 태양계의 천사들 → 지구와 인류 → 마지막 기록 및 후기' }
+    };
+    return chapters[chapNum] || { badge: '', title: '', range: '', count: 0, flow: '' };
   }
 
   function escapeHtml(str) {

@@ -4,9 +4,12 @@
 *.zip
 !js/lectures-data.js
 !js/stories-data.js
+!js/books-data.js
 extract_youtube_subtitles.py
 .DS_Store
 node_modules/
 새 폴더/
+__pycache__/
+*.pyc
 
 
